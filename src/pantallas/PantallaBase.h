@@ -1,22 +1,34 @@
 #pragma once
 #include <TFT_eSPI.h>
+#include <WiFi.h>
 
 class PantallaBase {
 public:
+    // Verifica si está conectado a WiFi
+    static bool estaConectadoWiFi() {
+        return WiFi.status() == WL_CONNECTED;
+    }
+
     // Dibuja el borde blanco y fondo negro
     static void fondoConBorde(TFT_eSPI& tft) {
         tft.fillScreen(TFT_BLACK);
         tft.drawRect(0, 0, tft.width(), tft.height(), TFT_WHITE);
     }
 
-    // Dibuja el logo WiFi en la esquina superior derecha
-    static void dibujarLogoWiFi(TFT_eSPI& tft) {
+    // Dibuja el logo WiFi en la esquina superior derecha con color especificado
+    static void dibujarLogoWiFi(TFT_eSPI& tft, uint16_t color = TFT_WHITE) {
         int x = tft.width() - 35;
         int y = 10;
-        tft.fillCircle(x, y + 15, 3, TFT_WHITE);
-        tft.drawArc(x, y + 15, 8, 8, 200, 340, TFT_WHITE, TFT_BLACK);
-        tft.drawArc(x, y + 15, 13, 13, 210, 330, TFT_WHITE, TFT_BLACK);
-        tft.drawArc(x, y + 15, 18, 18, 220, 320, TFT_WHITE, TFT_BLACK);
+        tft.fillCircle(x, y + 15, 3, color);
+        tft.drawArc(x, y + 15, 8, 8, 200, 340, color, TFT_BLACK);
+        tft.drawArc(x, y + 15, 13, 13, 210, 330, color, TFT_BLACK);
+        tft.drawArc(x, y + 15, 18, 18, 220, 320, color, TFT_BLACK);
+    }
+
+    // Dibuja el logo WiFi basado en el estado de conexión (blanco si conectado, rojo si no)
+    static void dibujarLogoWiFiConEstado(TFT_eSPI& tft) {
+        uint16_t color = estaConectadoWiFi() ? TFT_WHITE : TFT_RED;
+        dibujarLogoWiFi(tft, color);
     }
 
     // Dibuja el texto superior y la caja de contenido

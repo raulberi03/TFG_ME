@@ -21,7 +21,7 @@ namespace PantallaNumerica {
   inline Config& config() { static Config c; return c; }
 
   inline void dibujarZonaSuperior(TFT_eSPI& tft) {
-    PantallaBase::dibujarLogoWiFi(tft);
+    PantallaBase::dibujarLogoWiFiConEstado(tft);
     PantallaBase::dibujarTextoYCaja(tft, config().textoSuperior, valor());
   }
 
