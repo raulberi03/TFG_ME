@@ -1,35 +1,55 @@
 #include <Arduino.h>
+#include <SPI.h>
 #include <TFT_eSPI.h>
+#include <XPT2046_Touchscreen.h>
 
-TFT_eSPI tft;
+#include "pantallas/PantallaInicio.h"
+#include "pantallas/PantallaTeclado.h"
 
-void fullClear(uint16_t c) {
-  // Esto fuerza a cubrir todo el área que la librería cree que existe
-  tft.fillScreen(c);
-  tft.fillRect(0, 0, tft.width(), tft.height(), c);
-}
+// ===== Pines según tu esquema =====
+#define PIN_SPI_SCK   18
+#define PIN_SPI_MISO  19
+#define PIN_SPI_MOSI  23
+
+#define PIN_TFT_CS    5
+#define PIN_TOUCH_CS  14
+#define PIN_RC522_SS  27
+
+// ===== Objetos globales =====
+TFT_eSPI tft = TFT_eSPI();
+XPT2046_Touchscreen ts(PIN_TOUCH_CS);   // SIN IRQ (más estable)
 
 void setup() {
   Serial.begin(115200);
-  delay(200);
+  delay(300);
 
+  // ===== Asegurar que ningún dispositivo SPI queda seleccionado =====
+  pinMode(PIN_TFT_CS, OUTPUT);
+  digitalWrite(PIN_TFT_CS, HIGH);
+
+  pinMode(PIN_TOUCH_CS, OUTPUT);
+  digitalWrite(PIN_TOUCH_CS, HIGH);
+
+  pinMode(PIN_RC522_SS, OUTPUT);
+  digitalWrite(PIN_RC522_SS, HIGH);
+
+  // ===== Inicializar SPI compartido =====
+  SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI);
+
+  // ===== Inicializar pantalla =====
   tft.init();
-  tft.setRotation(3);
+  tft.setRotation(2);
 
-  Serial.printf("tft.width()=%d  tft.height()=%d\n", tft.width(), tft.height());
+  // ===== Inicializar táctil =====
+  ts.begin();
 
-  // Limpia y dibuja “marco” para ver si llega a bordes
-  fullClear(TFT_BLACK);
+  // Mostrar splash
+  PantallaInicio::mostrar(tft);
 
-  tft.drawRect(0, 0, tft.width(), tft.height(), TFT_WHITE);
-  tft.drawLine(0, 0, tft.width()-1, tft.height()-1, TFT_RED);
-  tft.drawLine(tft.width()-1, 0, 0, tft.height()-1, TFT_GREEN);
-
-  // Texto con fondo (esto evita “restos”)
-  tft.setTextSize(2);
-  tft.setTextColor(TFT_YELLOW, TFT_BLACK);
-  tft.setCursor(10, 10);
-  tft.printf("W=%d H=%d", tft.width(), tft.height());
+  // Si quieres saltar splash:
+  // PantallaTeclado::mostrar(tft);
 }
 
-void loop() {}
+void loop() {
+  PantallaTeclado::actualizar(tft, ts);
+}
