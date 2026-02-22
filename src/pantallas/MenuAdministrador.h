@@ -10,6 +10,7 @@ namespace AppController {
     String obtenerSSID();
     String obtenerPassword();
     void borrarCredencialesWifi();
+    bool conectarWifi(TFT_eSPI& tft);
     void gestionarRFIDAgregar(TFT_eSPI& tft);
     void gestionarRFIDSobrescribir(TFT_eSPI& tft);
     void gestionarRFIDDesvincular(TFT_eSPI& tft);
@@ -32,8 +33,8 @@ namespace { const char* const opciones[NUM_OPCIONES] = {
 }; }
 
 // Submenús para cada gestión
-constexpr int NUM_SUBOPCIONES_WIFI = 4;
-namespace { const char* const subopcionesWifi[NUM_SUBOPCIONES_WIFI] = { "Cambiar SSID", "Cambiar Contraseña", "Eliminar red", "Volver" }; }
+constexpr int NUM_SUBOPCIONES_WIFI = 5;
+namespace { const char* const subopcionesWifi[NUM_SUBOPCIONES_WIFI] = { "Cambiar SSID", "Cambiar Contraseña", "Conectar", "Eliminar red", "Volver" }; }
 
 constexpr int NUM_SUBOPCIONES_RFID = 3;
 namespace { const char* const subopcionesRfid[NUM_SUBOPCIONES_RFID] = { "Agregar", "Sobrescribir", "Desvincular" }; }
@@ -43,6 +44,8 @@ namespace { const char* const subopcionesGenericas[NUM_SUBOPCIONES_GENERICAS] = 
 
 inline int& subOpcionSeleccionada() { static int s = 0; return s; }
 inline int& menuActivo() { static int m = -1; return m; } // -1: menú principal, 0-2: submenú
+inline int& confirmacionSeleccionada() { static int c = 0; return c; }
+constexpr int MENU_CONFIRMAR_BORRADO_WIFI = 100;
 
 inline int subopcionesCount() {
     if (menuActivo() == 0) return NUM_SUBOPCIONES_WIFI;
@@ -77,31 +80,57 @@ inline void dibujarCampoValor(TFT_eSPI& tft, int x, int y, int w, int h, const c
 inline void mostrarWifiMenu(TFT_eSPI& tft) {
     PantallaBase::fondoConBorde(tft);
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    FontHelper::drawStringWithSpanish(tft, "WiFi", tft.width() / 2, 30, FontHelper::FONT_TITULO);
+    FontHelper::drawStringWithSpanish(tft, "WiFi", tft.width() / 2, 14, FontHelper::FONT_TEXTO);
 
     int boxX = 20;
     int boxW = tft.width() - 40;
     int boxH = 26;
 
-    int ssidBoxY = 50;
+    int ssidBoxY = 60;
     dibujarCampoValor(tft, boxX, ssidBoxY, boxW, boxH, "SSID Actual", AppController::obtenerSSID());
 
-    int passBoxY = 95;
+    int passBoxY = 120;
     dibujarCampoValor(tft, boxX, passBoxY, boxW, boxH, "Contraseña Actual", AppController::obtenerPassword());
 
-    int btnW = (tft.width() - 30) / 2;
-    int btnH = 40;
-    int btnGap = 10;
-    int btnX1 = 10;
-    int btnX2 = btnX1 + btnW + btnGap;
-    int btnY2 = tft.height() - btnH - 10;
-    int btnY1 = btnY2 - btnH - btnGap;
+    int btnX = 10;
+    int btnW = tft.width() - 20;
+    int btnH = 34;
+    int btnGap = 8;
+    int startY = 170;
 
-    dibujarBoton(tft, btnX1, btnY1, btnW, btnH, "Cambiar SSID", subOpcionSeleccionada() == 0);
-    dibujarBoton(tft, btnX2, btnY1, btnW, btnH, "Cambiar Clave", subOpcionSeleccionada() == 1);
-    dibujarBoton(tft, btnX1, btnY2, btnW, btnH, "Eliminar red", subOpcionSeleccionada() == 2);
-    dibujarBoton(tft, btnX2, btnY2, btnW, btnH, "Volver", subOpcionSeleccionada() == 3);
+    for (int i = 0; i < NUM_SUBOPCIONES_WIFI; ++i) {
+        int y = startY + i * (btnH + btnGap);
+        dibujarBoton(tft, btnX, y, btnW, btnH, subopcionesWifi[i], subOpcionSeleccionada() == i);
+    }
 
+    pintada() = true;
+}
+
+inline void obtenerLayoutConfirmacion(TFT_eSPI& tft, int& xSi, int& xNo, int& y, int& w, int& h) {
+    int gap = 10;
+    w = (tft.width() - 30) / 2;
+    h = 40;
+    y = (tft.height() / 2) + 15;
+    xSi = 10;
+    xNo = xSi + w + gap;
+}
+
+inline void mostrarConfirmacionBorrarWifi(TFT_eSPI& tft) {
+    PantallaBase::fondoConBorde(tft);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    int textoY = (tft.height() / 2) - 35;
+    FontHelper::drawStringWithSpanish(tft, "¿Estas seguro que deseas", tft.width() / 2, textoY, FontHelper::FONT_TEXTO);
+    FontHelper::drawStringWithSpanish(tft, "desconectarte?", tft.width() / 2, textoY + 24, FontHelper::FONT_TEXTO);
+
+    int xSi = 0;
+    int xNo = 0;
+    int y = 0;
+    int w = 0;
+    int h = 0;
+    obtenerLayoutConfirmacion(tft, xSi, xNo, y, w, h);
+
+    dibujarBoton(tft, xSi, y, w, h, "SI", confirmacionSeleccionada() == 0);
+    dibujarBoton(tft, xNo, y, w, h, "NO", confirmacionSeleccionada() == 1);
     pintada() = true;
 }
 
@@ -110,13 +139,13 @@ inline void mostrar(TFT_eSPI& tft) {
     if (menuActivo() == -1) {
         PantallaBase::fondoConBorde(tft);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
-        FontHelper::drawStringWithSpanish(tft, "Menu Administrador", tft.width() / 2, 30, FontHelper::FONT_TITULO);
+        FontHelper::drawStringWithSpanish(tft, "Menu Administrador", tft.width() / 2, 18, FontHelper::FONT_TEXTO);
 
         int btnX = 10;
         int btnW = tft.width() - 20;
-        int btnH = 40;
-        int btnGap = 8;
-        int startY = 45;
+        int btnH = 46;
+        int btnGap = 10;
+        int startY = 70;
 
         for (int i = 0; i < NUM_OPCIONES; ++i) {
             int y = startY + i * (btnH + btnGap);
@@ -124,17 +153,19 @@ inline void mostrar(TFT_eSPI& tft) {
         }
     } else if (menuActivo() == 0) {
         mostrarWifiMenu(tft);
+    } else if (menuActivo() == MENU_CONFIRMAR_BORRADO_WIFI) {
+        mostrarConfirmacionBorrarWifi(tft);
     } else {
         PantallaBase::fondoConBorde(tft);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
         // Submenú
-        FontHelper::drawStringWithSpanish(tft, opciones[menuActivo()], tft.width()/2, 30, FontHelper::FONT_TITULO);
+        FontHelper::drawStringWithSpanish(tft, opciones[menuActivo()], tft.width()/2, 18, FontHelper::FONT_TEXTO);
         int total = subopcionesCount();
         int btnX = 10;
         int btnW = tft.width() - 20;
-        int btnH = 40;
-        int btnGap = 8;
-        int startY = 45;
+        int btnH = 46;
+        int btnGap = 10;
+        int startY = 70;
 
         for (int i = 0; i < total; ++i) {
             int y = startY + i * (btnH + btnGap);
@@ -145,6 +176,21 @@ inline void mostrar(TFT_eSPI& tft) {
         dibujarBoton(tft, btnX, y, btnW, btnH, "Volver", subOpcionSeleccionada() == total);
     }
     pintada() = true;
+}
+
+inline void abrirConfirmacionBorrarWifi(TFT_eSPI& tft) {
+    menuActivo() = MENU_CONFIRMAR_BORRADO_WIFI;
+    confirmacionSeleccionada() = 0;
+    mostrar(tft);
+}
+
+inline void procesarConfirmacionBorrarWifi(TFT_eSPI& tft, int seleccion) {
+    if (seleccion == 0) {
+        AppController::borrarCredencialesWifi();
+    }
+    menuActivo() = 0;
+    subOpcionSeleccionada() = 0;
+    mostrar(tft);
 }
 
 // Selecciona opción del menú principal o submenú
@@ -170,8 +216,12 @@ inline void seleccionarOpcion(TFT_eSPI& tft) {
                 AppController::pedirSSID(tft);
             } else if (sel == 1) {
                 AppController::pedirPasswordWifi(tft);
+            } else if (sel == 2) {
+                AppController::conectarWifi(tft);
+                mostrar(tft);
+            } else if (sel == 3) {
+                abrirConfirmacionBorrarWifi(tft);
             } else {
-                // Volver
                 menuActivo() = -1;
                 mostrar(tft);
             }
@@ -196,26 +246,42 @@ inline void seleccionarOpcion(TFT_eSPI& tft) {
 
 // Detecta cuál opción fue tocada basándose en coordenadas x, y
 inline int detectarOpcionTocada(TFT_eSPI& tft, int x, int y) {
+    if (menuActivo() == MENU_CONFIRMAR_BORRADO_WIFI) {
+        int xSi = 0;
+        int xNo = 0;
+        int btnY = 0;
+        int btnW = 0;
+        int btnH = 0;
+        obtenerLayoutConfirmacion(tft, xSi, xNo, btnY, btnW, btnH);
+        if (x >= xSi && x <= xSi + btnW && y >= btnY && y <= btnY + btnH) {
+            return 0;
+        }
+        if (x >= xNo && x <= xNo + btnW && y >= btnY && y <= btnY + btnH) {
+            return 1;
+        }
+        return -1;
+    }
     if (menuActivo() == 0) {
-        int btnW = (tft.width() - 30) / 2;
-        int btnH = 40;
-        int btnGap = 10;
-        int btnX1 = 10;
-        int btnX2 = btnX1 + btnW + btnGap;
-        int btnY2 = tft.height() - btnH - 10;
-        int btnY1 = btnY2 - btnH - btnGap;
+        int btnX = 10;
+        int btnW = tft.width() - 20;
+        int btnH = 34;
+        int btnGap = 8;
+        int startY = 170;
 
-        if (x >= btnX1 && x <= btnX1 + btnW && y >= btnY1 && y <= btnY1 + btnH) return 0;
-        if (x >= btnX2 && x <= btnX2 + btnW && y >= btnY1 && y <= btnY1 + btnH) return 1;
-        if (x >= btnX1 && x <= btnX1 + btnW && y >= btnY2 && y <= btnY2 + btnH) return 2;
-        if (x >= btnX2 && x <= btnX2 + btnW && y >= btnY2 && y <= btnY2 + btnH) return 3;
+        for (int i = 0; i < NUM_SUBOPCIONES_WIFI; ++i) {
+            int yMin = startY + i * (btnH + btnGap);
+            int yMax = yMin + btnH;
+            if (x >= btnX && x <= btnX + btnW && y >= yMin && y <= yMax) {
+                return i;
+            }
+        }
         return -1;
     }
 
     int numOpciones = menuActivo() == -1 ? NUM_OPCIONES : subopcionesCount() + 1;
-    int btnH = 40;
-    int btnGap = 8;
-    int startY = 45;
+    int btnH = 46;
+    int btnGap = 10;
+    int startY = 70;
     int xMin = 10;
     int xMax = tft.width() - 10;
 
@@ -234,6 +300,13 @@ inline void procesarToque(TFT_eSPI& tft, int x, int y) {
     int opcionTocada = detectarOpcionTocada(tft, x, y);
     
     if (opcionTocada >= 0) {
+        if (menuActivo() == MENU_CONFIRMAR_BORRADO_WIFI) {
+            confirmacionSeleccionada() = opcionTocada;
+            mostrar(tft);
+            delay(100);
+            procesarConfirmacionBorrarWifi(tft, confirmacionSeleccionada());
+            return;
+        }
         if (menuActivo() == -1) {
             // Menú principal
             opcionSeleccionada() = opcionTocada;
@@ -250,8 +323,10 @@ inline void procesarToque(TFT_eSPI& tft, int x, int y) {
             } else if (sel == 1) {
                 AppController::pedirPasswordWifi(tft);
             } else if (sel == 2) {
-                AppController::borrarCredencialesWifi();
+                AppController::conectarWifi(tft);
                 mostrar(tft);
+            } else if (sel == 3) {
+                abrirConfirmacionBorrarWifi(tft);
             } else {
                 menuActivo() = -1;
                 mostrar(tft);
@@ -296,7 +371,7 @@ inline void actualizar(TFT_eSPI& tft, int boton) {
             mostrar(tft);
         }
     } else if (menuActivo() == 0) {
-        int total = 4;
+        int total = 5;
         if (boton == 0) {
             int sel = subOpcionSeleccionada();
             if (sel == 0) {
@@ -304,8 +379,10 @@ inline void actualizar(TFT_eSPI& tft, int boton) {
             } else if (sel == 1) {
                 AppController::pedirPasswordWifi(tft);
             } else if (sel == 2) {
-                AppController::borrarCredencialesWifi();
+                AppController::conectarWifi(tft);
                 mostrar(tft);
+            } else if (sel == 3) {
+                abrirConfirmacionBorrarWifi(tft);
             } else {
                 menuActivo() = -1;
                 mostrar(tft);
@@ -315,6 +392,17 @@ inline void actualizar(TFT_eSPI& tft, int boton) {
             mostrar(tft);
         } else if (boton == 2) {
             subOpcionSeleccionada() = (subOpcionSeleccionada() + 1) % total;
+            mostrar(tft);
+        }
+    } else if (menuActivo() == MENU_CONFIRMAR_BORRADO_WIFI) {
+        int total = 2;
+        if (boton == 0) {
+            procesarConfirmacionBorrarWifi(tft, confirmacionSeleccionada());
+        } else if (boton == 1) {
+            confirmacionSeleccionada() = (confirmacionSeleccionada() - 1 + total) % total;
+            mostrar(tft);
+        } else if (boton == 2) {
+            confirmacionSeleccionada() = (confirmacionSeleccionada() + 1) % total;
             mostrar(tft);
         }
     } else {

@@ -1,6 +1,8 @@
 #pragma once
 #include <TFT_eSPI.h>
 #include <Arduino.h>
+#include <WiFi.h>
+#include <Preferences.h>
 #include "pantallas/PantallaBase.h"
 #include "pantallas/PantallaAlfanumerica.h"
 #include "pantallas/MenuAdministrador.h"
@@ -10,6 +12,63 @@ namespace WiFiController {
     namespace {
         String ssidDeTienda = "";
         String passwordDeTienda = "";
+        Preferences prefs;
+
+        void guardarCredenciales() {
+            prefs.begin("wifi", false);
+            prefs.putString("ssid", ssidDeTienda);
+            prefs.putString("pass", passwordDeTienda);
+            prefs.end();
+        }
+
+        void mostrarConectando(TFT_eSPI& tft) {
+            PantallaBase::fondoConBorde(tft);
+            tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            FontHelper::drawStringWithSpanish(tft, "Conectando...", tft.width() / 2, tft.height() / 2, FontHelper::FONT_TITULO);
+        }
+
+        void mostrarResultadoConexion(TFT_eSPI& tft, bool ok) {
+            PantallaBase::fondoConBorde(tft);
+            if (ok) {
+                tft.setTextColor(TFT_GREEN, TFT_BLACK);
+                FontHelper::drawStringWithSpanish(tft, "Conexion correcta", tft.width() / 2, tft.height() / 2, FontHelper::FONT_TITULO);
+            } else {
+                tft.setTextColor(TFT_RED, TFT_BLACK);
+                FontHelper::drawStringWithSpanish(tft, "Conexion fallida", tft.width() / 2, tft.height() / 2, FontHelper::FONT_TITULO);
+            }
+        }
+
+        bool conectarInterno(TFT_eSPI* tft, bool mostrarPantallas) {
+            if (ssidDeTienda.length() == 0) {
+                if (mostrarPantallas && tft) {
+                    mostrarResultadoConexion(*tft, false);
+                    delay(1200);
+                }
+                return false;
+            }
+
+            if (mostrarPantallas && tft) {
+                mostrarConectando(*tft);
+            }
+
+            WiFi.mode(WIFI_STA);
+            WiFi.disconnect(true);
+            delay(100);
+            WiFi.begin(ssidDeTienda.c_str(), passwordDeTienda.c_str());
+
+            const uint32_t timeoutMs = 15000;
+            uint32_t inicio = millis();
+            while (WiFi.status() != WL_CONNECTED && (millis() - inicio) < timeoutMs) {
+                delay(200);
+            }
+
+            bool ok = (WiFi.status() == WL_CONNECTED);
+            if (mostrarPantallas && tft) {
+                mostrarResultadoConexion(*tft, ok);
+                delay(1200);
+            }
+            return ok;
+        }
         
         void mostrarMensajeSSSID(TFT_eSPI& tft) {
             delay(500);
@@ -29,6 +88,7 @@ namespace WiFiController {
         
         void onSSIDOk(TFT_eSPI& tft, const String& valor) {
             ssidDeTienda = valor;
+            guardarCredenciales();
             PantallaAlfanumerica::pintada() = false;
             mostrarMensajeSSSID(tft);
             MenuAdministrador::mostrar(tft);
@@ -46,6 +106,7 @@ namespace WiFiController {
         
         void onPasswordOk(TFT_eSPI& tft, const String& valor) {
             passwordDeTienda = valor;
+            guardarCredenciales();
             PantallaAlfanumerica::pintada() = false;
             mostrarMensajePassword(tft);
             MenuAdministrador::mostrar(tft);
@@ -99,5 +160,26 @@ namespace WiFiController {
     inline void borrarCredenciales() {
         ssidDeTienda = "";
         passwordDeTienda = "";
+        prefs.begin("wifi", false);
+        prefs.remove("ssid");
+        prefs.remove("pass");
+        prefs.end();
+        WiFi.disconnect(true);
+        WiFi.mode(WIFI_OFF);
+    }
+
+    inline void cargarCredenciales() {
+        prefs.begin("wifi", true);
+        ssidDeTienda = prefs.getString("ssid", "");
+        passwordDeTienda = prefs.getString("pass", "");
+        prefs.end();
+    }
+
+    inline bool conectarConPantalla(TFT_eSPI& tft) {
+        return conectarInterno(&tft, true);
+    }
+
+    inline bool conectarSilencioso() {
+        return conectarInterno(nullptr, false);
     }
 }

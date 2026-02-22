@@ -8,13 +8,31 @@
 
 namespace TouchController {
     namespace {
+        constexpr int kTouchMinX = 378;
+        constexpr int kTouchMaxX = 3723;
+        constexpr int kTouchMinY = 446;
+        constexpr int kTouchMaxY = 3832;
+        constexpr int kTouchMinPressure = 10;
+
         bool readTouch(TFT_eSPI& tft, XPT2046_Touchscreen& ts, int& outX, int& outY) {
-            TS_Point p = ts.getPoint();
-            if (p.z < 20) {
+            if (!ts.touched()) {
                 return false;
             }
-            int x = map(p.y, 3723, 378, 0, tft.width() - 1);
-            int y = map(p.x, 446, 3832, 0, tft.height() - 1);
+
+            TS_Point p1 = ts.getPoint();
+            delay(5);
+            TS_Point p2 = ts.getPoint();
+
+            int z = (p1.z + p2.z) / 2;
+            if (z < kTouchMinPressure) {
+                return false;
+            }
+
+            int px = (p1.x + p2.x) / 2;
+            int py = (p1.y + p2.y) / 2;
+
+            int x = map(py, kTouchMaxX, kTouchMinX, 0, tft.width() - 1);
+            int y = map(px, kTouchMinY, kTouchMaxY, 0, tft.height() - 1);
             outX = constrain(x, 0, tft.width() - 1);
             outY = constrain(y, 0, tft.height() - 1);
             return true;
@@ -25,7 +43,7 @@ namespace TouchController {
     inline void process(TFT_eSPI& tft, XPT2046_Touchscreen& ts) {
         static uint32_t ultimoToqueMs = 0;
         uint32_t ahora = millis();
-        if (ahora - ultimoToqueMs <= 180) {
+        if (ahora - ultimoToqueMs <= 120) {
             return;
         }
 

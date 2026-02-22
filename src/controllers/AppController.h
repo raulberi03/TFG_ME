@@ -9,6 +9,9 @@
 #include "controllers/RFIDController.h"
 #include "controllers/TouchController.h"
 #include "controllers/WiFiController.h"
+#include "pantallas/PantallaBase.h"
+#include "pantallas/PantallaNumerica.h"
+#include "pantallas/PantallaAlfanumerica.h"
 
 namespace AppController {
     // Inicializa los controladores y el flujo de pantallas.
@@ -16,6 +19,8 @@ namespace AppController {
         (void)ts;
         (void)rfid;
         (void)rfidUsuarios;
+        WiFiController::cargarCredenciales();
+        WiFiController::conectarSilencioso();
         RFIDController::begin(rfidUsuarios);
         LoginController::begin(tft);
     }
@@ -23,11 +28,20 @@ namespace AppController {
     // Orquesta UI, RFID y tactil.
     inline void loop(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, RFIDUsuariosService& rfidUsuarios) {
         (void)rfidUsuarios;
+        static uint32_t ultimoWifiCheckMs = 0;
         if (rfid.detectarTarjeta()) {
             Serial.print("RFID UID: ");
             Serial.println(rfid.ultimoUidHex());
             if (!RFIDController::handleCard(tft, rfid.ultimoUidHex()) && !MenuAdministrador::pintada()) {
                 LoginController::handleRfidLogin(tft, rfid.ultimoUidValido());
+            }
+        }
+
+        uint32_t ahoraMs = millis();
+        if (ahoraMs - ultimoWifiCheckMs >= 2000) {
+            ultimoWifiCheckMs = ahoraMs;
+            if (PantallaNumerica::pintada() || PantallaAlfanumerica::pintada()) {
+                PantallaBase::dibujarLogoWiFiConEstado(tft);
             }
         }
 
@@ -70,5 +84,9 @@ namespace AppController {
 
     inline void borrarCredencialesWifi() {
         WiFiController::borrarCredenciales();
+    }
+
+    inline bool conectarWifi(TFT_eSPI& tft) {
+        return WiFiController::conectarConPantalla(tft);
     }
 }
