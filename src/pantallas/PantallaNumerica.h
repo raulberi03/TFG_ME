@@ -41,7 +41,7 @@ namespace PantallaNumerica {
       {"1","2","3"},
       {"4","5","6"},
       {"7","8","9"},
-      {"CLR","0","OK"}
+      {"DEL","0","OK"}
     };
     return keys[fila][col];
   }
@@ -84,8 +84,10 @@ namespace PantallaNumerica {
   }
 
   inline void procesarTecla(TFT_eSPI& tft, const char* k) {
-    if (strcmp(k, "CLR") == 0) {
-      if (config().onClr) config().onClr(tft, valor());
+    if (strcmp(k, "DEL") == 0) {
+      if (valor().length() > 0) {
+        valor().remove(valor().length() - 1);
+      }
       refrescarCajaValor(tft);
       return;
     }
