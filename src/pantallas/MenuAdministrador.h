@@ -5,6 +5,9 @@
 // Forward declarations
 void pedirSSID(TFT_eSPI& tft);
 void pedirPasswordWifi(TFT_eSPI& tft);
+void gestionarRFIDAgregar(TFT_eSPI& tft);
+void gestionarRFIDSobrescribir(TFT_eSPI& tft);
+void gestionarRFIDDesvincular(TFT_eSPI& tft);
 
 namespace MenuAdministrador {
 
@@ -25,10 +28,28 @@ const char* opciones[NUM_OPCIONES] = {
 };
 
 // Submenús para cada gestión
-constexpr int NUM_SUBOPCIONES = 2;
-const char* subopciones[NUM_SUBOPCIONES] = { "SSID", "Contraseña" };
+constexpr int NUM_SUBOPCIONES_WIFI = 2;
+const char* subopcionesWifi[NUM_SUBOPCIONES_WIFI] = { "SSID", "Contrasena" };
+
+constexpr int NUM_SUBOPCIONES_RFID = 3;
+const char* subopcionesRfid[NUM_SUBOPCIONES_RFID] = { "Agregar", "Sobrescribir", "Desvincular" };
+
+constexpr int NUM_SUBOPCIONES_GENERICAS = 2;
+const char* subopcionesGenericas[NUM_SUBOPCIONES_GENERICAS] = { "Opcion 1", "Opcion 2" };
 inline int& subOpcionSeleccionada() { static int s = 0; return s; }
 inline int& menuActivo() { static int m = -1; return m; } // -1: menú principal, 0-3: submenú
+
+inline int subopcionesCount() {
+    if (menuActivo() == 0) return NUM_SUBOPCIONES_WIFI;
+    if (menuActivo() == 2) return NUM_SUBOPCIONES_RFID;
+    return NUM_SUBOPCIONES_GENERICAS;
+}
+
+inline const char* subopcionTexto(int idx) {
+    if (menuActivo() == 0) return subopcionesWifi[idx];
+    if (menuActivo() == 2) return subopcionesRfid[idx];
+    return subopcionesGenericas[idx];
+}
 
 // Dibuja el menú de administrador
 // Dibuja el menú principal o submenú
@@ -54,7 +75,8 @@ inline void mostrar(TFT_eSPI& tft) {
     } else {
         // Submenú
         tft.drawString(opciones[menuActivo()], tft.width()/2, 30);
-        for (int i = 0; i < NUM_SUBOPCIONES; ++i) {
+        int total = subopcionesCount();
+        for (int i = 0; i < total; ++i) {
             int y = 80 + i * 40;
             tft.drawRect(30, y-10, tft.width()-60, 35, TFT_WHITE);
             if (i == subOpcionSeleccionada()) {
@@ -63,12 +85,12 @@ inline void mostrar(TFT_eSPI& tft) {
             } else {
                 tft.setTextColor(TFT_WHITE, TFT_BLACK);
             }
-            tft.drawString(subopciones[i], tft.width()/2, y);
+            tft.drawString(subopcionTexto(i), tft.width()/2, y);
         }
         // Botón volver
-        int y = 80 + NUM_SUBOPCIONES * 40;
+        int y = 80 + total * 40;
         tft.drawRect(30, y-10, tft.width()-60, 35, TFT_WHITE);
-        if (subOpcionSeleccionada() == MenuAdministrador::NUM_SUBOPCIONES) {
+        if (subOpcionSeleccionada() == total) {
             tft.fillRect(31, y-9, tft.width()-62, 33, TFT_WHITE);
             tft.setTextColor(TFT_BLACK, TFT_WHITE);
         } else {
@@ -112,8 +134,19 @@ inline void seleccionarOpcion(TFT_eSPI& tft) {
                 menuActivo() = -1;
                 mostrar(tft);
             }
+        } else if (menuActivo() == 2) { // Gestion RFID
+            if (sel == 0) {
+                gestionarRFIDAgregar(tft);
+            } else if (sel == 1) {
+                gestionarRFIDSobrescribir(tft);
+            } else if (sel == 2) {
+                gestionarRFIDDesvincular(tft);
+            } else {
+                menuActivo() = -1;
+                mostrar(tft);
+            }
         } else if (sel == 0 || sel == 1) {
-            mostrarPantallaFutura(tft, subopciones[sel]);
+            mostrarPantallaFutura(tft, subopcionTexto(sel));
         } else {
             // Volver
             menuActivo() = -1;
@@ -136,7 +169,7 @@ inline void mostrarPantallaFutura(TFT_eSPI& tft, const char* opcion) {
 
 // Detecta cuál opción fue tocada basándose en coordenadas x, y
 inline int detectarOpcionTocada(TFT_eSPI& tft, int x, int y) {
-    int numOpciones = menuActivo() == -1 ? NUM_OPCIONES : NUM_SUBOPCIONES + 1;
+    int numOpciones = menuActivo() == -1 ? NUM_OPCIONES : subopcionesCount() + 1;
     
     for (int i = 0; i < numOpciones; ++i) {
         int yOpcion = 80 + i * 40;
@@ -179,8 +212,19 @@ inline void procesarToque(TFT_eSPI& tft, int x, int y) {
                     menuActivo() = -1;
                     mostrar(tft);
                 }
+            } else if (menuActivo() == 2) {
+                if (sel == 0) {
+                    gestionarRFIDAgregar(tft);
+                } else if (sel == 1) {
+                    gestionarRFIDSobrescribir(tft);
+                } else if (sel == 2) {
+                    gestionarRFIDDesvincular(tft);
+                } else {
+                    menuActivo() = -1;
+                    mostrar(tft);
+                }
             } else if (sel == 0 || sel == 1) {
-                mostrarPantallaFutura(tft, subopciones[sel]);
+                mostrarPantallaFutura(tft, subopcionTexto(sel));
             } else {
                 menuActivo() = -1;
                 mostrar(tft);
@@ -206,18 +250,20 @@ inline void actualizar(TFT_eSPI& tft, int boton) {
         if (boton == 0) {
             // Seleccionar subopción o volver
             int sel = subOpcionSeleccionada();
-            if (sel == 0 || sel == 1) {
+            int total = subopcionesCount();
+            if (sel < total) {
                 seleccionarOpcion(tft);
             } else {
-                // Volver
                 menuActivo() = -1;
                 mostrar(tft);
             }
         } else if (boton == 1) {
-            subOpcionSeleccionada() = (subOpcionSeleccionada() - 1 + NUM_SUBOPCIONES + 1) % (NUM_SUBOPCIONES + 1);
+            int total = subopcionesCount();
+            subOpcionSeleccionada() = (subOpcionSeleccionada() - 1 + total + 1) % (total + 1);
             mostrar(tft);
         } else if (boton == 2) {
-            subOpcionSeleccionada() = (subOpcionSeleccionada() + 1) % (NUM_SUBOPCIONES + 1);
+            int total = subopcionesCount();
+            subOpcionSeleccionada() = (subOpcionSeleccionada() + 1) % (total + 1);
             mostrar(tft);
         }
     }
