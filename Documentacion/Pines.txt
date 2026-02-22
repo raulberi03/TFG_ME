@@ -1,0 +1,43 @@
+🖥 2. Bus SPI (compartido)
+
+Estos tres pines van conectados en paralelo a:
+TFT + Táctil (si es XPT2046) + RC522
+
+GPIO18 → SCK
+GPIO23 → MOSI
+GPIO19 → MISO
+
+| TFT             | ESP32    |
+| --------------- | -------- |
+| CS              | GPIO5    |
+| DC              | GPIO21   |
+| RST             | GPIO22   |
+| SCK             | GPIO18   |
+| MOSI            | GPIO23   |
+| MISO (si tiene) | GPIO19   |
+| LED/BL          | 3V3 o 5V |
+
+| TOUCH | ESP32  |
+| ----- | ------ |
+| T_CS  | GPIO14 |
+| T_IRQ | GPIO33 |
+| CLK   | GPIO18 |
+| DIN   | GPIO23 |
+| DO    | GPIO19 |
+
+| RC522    | ESP32  |
+| -------- | ------ |
+| SDA / SS | GPIO27 |
+| SCK      | GPIO18 |
+| MOSI     | GPIO23 |
+| MISO     | GPIO19 |
+| RST      | GPIO26 |
+| VCC      | 3V3    |
+| GND      | GND    |
+
+| R503 | ESP32  |
+| ---- | ------ |
+| TX   | GPIO16 |
+| RX   | GPIO17 |
+| VCC  | 5V     |
+| GND  | GND    |
