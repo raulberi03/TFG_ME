@@ -74,11 +74,11 @@ namespace AppController {
         RFIDController::startUnlink(tft);
     }
 
-    inline String obtenerSSID() {
+    inline const String& obtenerSSID() {
         return WiFiController::obtenerSSID();
     }
 
-    inline String obtenerPassword() {
+    inline const String& obtenerPassword() {
         return WiFiController::obtenerPassword();
     }
 

@@ -33,7 +33,7 @@ public:
     }
 
     // Dibuja el texto superior y la caja de contenido
-    static void dibujarTextoYCaja(TFT_eSPI& tft, const String& texto, const String& valor) {
+    static void dibujarTextoYCaja(TFT_eSPI& tft, const char* texto, const String& valor) {
         int h = (int)(tft.height() * 0.20f);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
         FontHelper::drawStringWithSpanish(tft, texto, tft.width() / 2, h / 2, FontHelper::FONT_TEXTO);
@@ -43,6 +43,10 @@ public:
         int boxY = h + 10;
         tft.drawRect(boxX, boxY, boxW, boxH, TFT_WHITE);
         FontHelper::drawStringWithSpanish(tft, valor, tft.width() / 2, boxY + boxH / 2, FontHelper::FONT_TEXTO);
+    }
+
+    static void dibujarTextoYCaja(TFT_eSPI& tft, const String& texto, const String& valor) {
+        dibujarTextoYCaja(tft, texto.c_str(), valor);
     }
 
     // Refresca solo el valor en la caja

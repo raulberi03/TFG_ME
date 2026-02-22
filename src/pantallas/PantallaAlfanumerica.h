@@ -17,7 +17,7 @@ namespace PantallaAlfanumerica {
   };
 
   struct Config {
-    String textoSuperior;
+    const char* textoSuperior = "";
     uint8_t maxLen = 32;
     OnOkCallback onOk = nullptr;
     OnClrCallback onClr = nullptr;

@@ -7,8 +7,8 @@
 namespace AppController {
     void pedirSSID(TFT_eSPI& tft);
     void pedirPasswordWifi(TFT_eSPI& tft);
-    String obtenerSSID();
-    String obtenerPassword();
+    const String& obtenerSSID();
+    const String& obtenerPassword();
     void borrarCredencialesWifi();
     bool conectarWifi(TFT_eSPI& tft);
     void gestionarRFIDAgregar(TFT_eSPI& tft);
@@ -302,21 +302,15 @@ inline void procesarToque(TFT_eSPI& tft, int x, int y) {
     if (opcionTocada >= 0) {
         if (menuActivo() == MENU_CONFIRMAR_BORRADO_WIFI) {
             confirmacionSeleccionada() = opcionTocada;
-            mostrar(tft);
-            delay(100);
             procesarConfirmacionBorrarWifi(tft, confirmacionSeleccionada());
             return;
         }
         if (menuActivo() == -1) {
             // Menú principal
             opcionSeleccionada() = opcionTocada;
-            mostrar(tft);
-            delay(100);
             seleccionarOpcion(tft);
         } else if (menuActivo() == 0) {
             subOpcionSeleccionada() = opcionTocada;
-            mostrar(tft);
-            delay(100);
             int sel = subOpcionSeleccionada();
             if (sel == 0) {
                 AppController::pedirSSID(tft);
@@ -334,8 +328,6 @@ inline void procesarToque(TFT_eSPI& tft, int x, int y) {
         } else {
             // Submenú
             subOpcionSeleccionada() = opcionTocada;
-            mostrar(tft);
-            delay(100);
             
             int sel = subOpcionSeleccionada();
             if (menuActivo() == 1) {

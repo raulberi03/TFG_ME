@@ -11,7 +11,7 @@ namespace PantallaNumerica {
   typedef void (*OnClrCallback)(TFT_eSPI& tft, String& valor);
 
   struct Config {
-    String textoSuperior;
+    const char* textoSuperior = "";
     uint8_t maxLen = 8;
     OnOkCallback onOk = nullptr;
     OnClrCallback onClr = nullptr;

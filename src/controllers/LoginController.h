@@ -20,7 +20,7 @@ namespace LoginController {
         void onPasswordOk(TFT_eSPI& tft, const String& pass);
         void onPasswordClr(TFT_eSPI& tft, String& v);
 
-        void mostrarPromptNumerico(TFT_eSPI& tft, const String& titulo,
+        void mostrarPromptNumerico(TFT_eSPI& tft, const char* titulo,
                                    PantallaNumerica::OnOkCallback onOk,
                                    PantallaNumerica::OnClrCallback onClr) {
             PantallaNumerica::Config cfg;

@@ -148,12 +148,12 @@ namespace WiFiController {
     }
     
     // Retorna el SSID ingresado
-    inline String obtenerSSID() {
+    inline const String& obtenerSSID() {
         return ssidDeTienda;
     }
     
     // Retorna la contraseña ingresada
-    inline String obtenerPassword() {
+    inline const String& obtenerPassword() {
         return passwordDeTienda;
     }
 
