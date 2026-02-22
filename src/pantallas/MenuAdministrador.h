@@ -3,11 +3,13 @@
 #include "PantallaBase.h"
 
 // Forward declarations
-void pedirSSID(TFT_eSPI& tft);
-void pedirPasswordWifi(TFT_eSPI& tft);
-void gestionarRFIDAgregar(TFT_eSPI& tft);
-void gestionarRFIDSobrescribir(TFT_eSPI& tft);
-void gestionarRFIDDesvincular(TFT_eSPI& tft);
+namespace AppController {
+    void pedirSSID(TFT_eSPI& tft);
+    void pedirPasswordWifi(TFT_eSPI& tft);
+    void gestionarRFIDAgregar(TFT_eSPI& tft);
+    void gestionarRFIDSobrescribir(TFT_eSPI& tft);
+    void gestionarRFIDDesvincular(TFT_eSPI& tft);
+}
 
 namespace MenuAdministrador {
 
@@ -19,23 +21,23 @@ inline int& opcionSeleccionada() { static int o = 0; return o; }
 
 // Opciones principales del menú de administrador
 constexpr int NUM_OPCIONES = 5;
-const char* opciones[NUM_OPCIONES] = {
+namespace { const char* const opciones[NUM_OPCIONES] = {
     "Cambiar Wifi",
     "Gestion Usuarios",
     "Gestion RFID",
     "Gestion Huella",
     "Salir"
-};
+}; }
 
 // Submenús para cada gestión
 constexpr int NUM_SUBOPCIONES_WIFI = 2;
-const char* subopcionesWifi[NUM_SUBOPCIONES_WIFI] = { "SSID", "Contrasena" };
+namespace { const char* const subopcionesWifi[NUM_SUBOPCIONES_WIFI] = { "SSID", "Contrasena" }; }
 
 constexpr int NUM_SUBOPCIONES_RFID = 3;
-const char* subopcionesRfid[NUM_SUBOPCIONES_RFID] = { "Agregar", "Sobrescribir", "Desvincular" };
+namespace { const char* const subopcionesRfid[NUM_SUBOPCIONES_RFID] = { "Agregar", "Sobrescribir", "Desvincular" }; }
 
 constexpr int NUM_SUBOPCIONES_GENERICAS = 2;
-const char* subopcionesGenericas[NUM_SUBOPCIONES_GENERICAS] = { "Opcion 1", "Opcion 2" };
+namespace { const char* const subopcionesGenericas[NUM_SUBOPCIONES_GENERICAS] = { "Opcion 1", "Opcion 2" }; }
 inline int& subOpcionSeleccionada() { static int s = 0; return s; }
 inline int& menuActivo() { static int m = -1; return m; } // -1: menú principal, 0-3: submenú
 
@@ -126,9 +128,9 @@ inline void seleccionarOpcion(TFT_eSPI& tft) {
         int sel = subOpcionSeleccionada();
         if (menuActivo() == 0) { // Cambiar Wifi
             if (sel == 0) {
-                pedirSSID(tft);
+                AppController::pedirSSID(tft);
             } else if (sel == 1) {
-                pedirPasswordWifi(tft);
+                AppController::pedirPasswordWifi(tft);
             } else {
                 // Volver
                 menuActivo() = -1;
@@ -136,11 +138,11 @@ inline void seleccionarOpcion(TFT_eSPI& tft) {
             }
         } else if (menuActivo() == 2) { // Gestion RFID
             if (sel == 0) {
-                gestionarRFIDAgregar(tft);
+                AppController::gestionarRFIDAgregar(tft);
             } else if (sel == 1) {
-                gestionarRFIDSobrescribir(tft);
+                AppController::gestionarRFIDSobrescribir(tft);
             } else if (sel == 2) {
-                gestionarRFIDDesvincular(tft);
+                AppController::gestionarRFIDDesvincular(tft);
             } else {
                 menuActivo() = -1;
                 mostrar(tft);
@@ -205,20 +207,20 @@ inline void procesarToque(TFT_eSPI& tft, int x, int y) {
             int sel = subOpcionSeleccionada();
             if (menuActivo() == 0) {
                 if (sel == 0) {
-                    pedirSSID(tft);
+                    AppController::pedirSSID(tft);
                 } else if (sel == 1) {
-                    pedirPasswordWifi(tft);
+                    AppController::pedirPasswordWifi(tft);
                 } else {
                     menuActivo() = -1;
                     mostrar(tft);
                 }
             } else if (menuActivo() == 2) {
                 if (sel == 0) {
-                    gestionarRFIDAgregar(tft);
+                    AppController::gestionarRFIDAgregar(tft);
                 } else if (sel == 1) {
-                    gestionarRFIDSobrescribir(tft);
+                    AppController::gestionarRFIDSobrescribir(tft);
                 } else if (sel == 2) {
-                    gestionarRFIDDesvincular(tft);
+                    AppController::gestionarRFIDDesvincular(tft);
                 } else {
                     menuActivo() = -1;
                     mostrar(tft);

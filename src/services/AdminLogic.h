@@ -1,25 +1,24 @@
 #pragma once
 #include <TFT_eSPI.h>
 
-
 namespace AdminLogic {
 
-// Estado del menú administrador
+// Estado del menu administrador.
 inline bool& menuActivo() { static bool a = false; return a; }
 
-// Código especial de superusuario
+// Codigo especial de superusuario.
 constexpr const char* SUPERUSER_CODE = "1234";
 constexpr const char* SUPERUSER_PASS = "1234";
 
-// Llama esto cuando se detecte el código y password de superusuario
+// Llama esto cuando se detecte el codigo y password de superusuario.
 inline void mostrarMenu(TFT_eSPI& tft) {
     menuActivo() = true;
     MenuAdministrador::pintada() = false;
 }
 
-// Llama esto en el loop principal si el menú está activo
+// Llama esto en el loop principal si el menu esta activo.
 inline void loopMenu(TFT_eSPI& tft, XPT2046_Touchscreen& ts) {
-    // Si la pantalla alfanumérica está activa, no procesar menú
+    // Si la pantalla alfanumerica esta activa, no procesar menu.
     extern bool PantallaAlfanumerica_pintada();
     if (PantallaAlfanumerica_pintada && PantallaAlfanumerica_pintada()) return;
     if (!MenuAdministrador::pintada()) {
@@ -35,7 +34,7 @@ inline void loopMenu(TFT_eSPI& tft, XPT2046_Touchscreen& ts) {
             int y = map(p.x, 446, 3832, 0, tft.height() - 1);
             x = constrain(x, 0, tft.width() - 1);
             y = constrain(y, 0, tft.height() - 1);
-            // Detectar opción tocada
+            // Detectar opcion tocada.
             int y0 = 80;
             int h = 40;
             if (MenuAdministrador::menuActivo() == -1) {
@@ -66,7 +65,7 @@ inline void loopMenu(TFT_eSPI& tft, XPT2046_Touchscreen& ts) {
     }
 }
 
-// Llama esto cuando quieras salir del menú
+// Llama esto cuando quieras salir del menu.
 inline void salirMenu() {
     menuActivo() = false;
 }
