@@ -1,6 +1,7 @@
 #pragma once
 #include <TFT_eSPI.h>
 #include <WiFi.h>
+#include "FontHelper.h"
 
 class PantallaBase {
 public:
@@ -35,16 +36,13 @@ public:
     static void dibujarTextoYCaja(TFT_eSPI& tft, const String& texto, const String& valor) {
         int h = (int)(tft.height() * 0.20f);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
-        tft.setTextDatum(MC_DATUM);
-        tft.setTextSize(2);
-        tft.drawString(texto.c_str(), tft.width() / 2, h / 2);
+        FontHelper::drawStringWithSpanish(tft, texto, tft.width() / 2, h / 2, FontHelper::FONT_TEXTO);
         int boxX = 20;
         int boxW = tft.width() - 40;
         int boxH = 40;
         int boxY = h + 10;
         tft.drawRect(boxX, boxY, boxW, boxH, TFT_WHITE);
-        tft.setTextSize(3);
-        tft.drawString(valor.c_str(), tft.width() / 2, boxY + boxH / 2);
+        FontHelper::drawStringWithSpanish(tft, valor, tft.width() / 2, boxY + boxH / 2, FontHelper::FONT_TEXTO);
     }
 
     // Refresca solo el valor en la caja
@@ -56,8 +54,6 @@ public:
         int boxY = h + 10;
         tft.fillRect(boxX + 1, boxY + 1, boxW - 2, boxH - 2, TFT_BLACK);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
-        tft.setTextDatum(MC_DATUM);
-        tft.setTextSize(3);
-        tft.drawString(valor.c_str(), tft.width() / 2, boxY + boxH / 2);
+        FontHelper::drawStringWithSpanish(tft, valor, tft.width() / 2, boxY + boxH / 2, FontHelper::FONT_TEXTO);
     }
 };

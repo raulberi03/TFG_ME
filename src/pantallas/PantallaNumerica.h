@@ -3,6 +3,7 @@
 #include <TFT_eSPI.h>
 #include <XPT2046_Touchscreen.h>
 #include "PantallaBase.h"
+#include "FontHelper.h"
 
 namespace PantallaNumerica {
 
@@ -56,9 +57,7 @@ namespace PantallaNumerica {
     tft.fillRect(x, y, w, h, bg);
     tft.drawRect(x, y, w, h, TFT_WHITE);
     tft.setTextColor(fg, bg);
-    tft.setTextDatum(MC_DATUM);
-    tft.setTextSize(2);
-    tft.drawString(labelTecla(fila, col), x + w / 2, y + h / 2);
+    FontHelper::drawStringWithSpanish(tft, labelTecla(fila, col), x + w / 2, y + h / 2, FontHelper::FONT_BOTON);
   }
 
   inline void efectoPulsacion(TFT_eSPI& tft, int fila, int col) {

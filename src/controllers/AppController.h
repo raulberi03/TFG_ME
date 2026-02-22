@@ -59,4 +59,16 @@ namespace AppController {
     inline void gestionarRFIDDesvincular(TFT_eSPI& tft) {
         RFIDController::startUnlink(tft);
     }
+
+    inline String obtenerSSID() {
+        return WiFiController::obtenerSSID();
+    }
+
+    inline String obtenerPassword() {
+        return WiFiController::obtenerPassword();
+    }
+
+    inline void borrarCredencialesWifi() {
+        WiFiController::borrarCredenciales();
+    }
 }

@@ -3,6 +3,7 @@
 #include <XPT2046_Touchscreen.h>
 #include <Arduino.h>
 #include "pantallas/PantallaNumerica.h"
+#include "pantallas/PantallaAlfanumerica.h"
 #include "pantallas/MenuAdministrador.h"
 
 namespace TouchController {
@@ -43,6 +44,23 @@ namespace TouchController {
                 if (col >= 0 && col <= 2 && fila >= 0 && fila <= 3) {
                     PantallaNumerica::efectoPulsacion(tft, fila, col);
                     PantallaNumerica::procesarTecla(tft, PantallaNumerica::labelTecla(fila, col));
+                }
+            }
+            return;
+        }
+
+        if (PantallaAlfanumerica::pintada()) {
+            int y0 = PantallaAlfanumerica::tecladoY(tft);
+            if (y >= y0) {
+                int fila = (y - y0) / PantallaAlfanumerica::teclaH(tft);
+                if (fila >= 0 && fila < 4) {
+                    int keyX = 0;
+                    int keyW = 0;
+                    const char* label = PantallaAlfanumerica::keyAt(tft, fila, x, keyX, keyW);
+                    if (strlen(label) > 0) {
+                        PantallaAlfanumerica::efectoPulsacion(tft, fila, keyX, keyW, label);
+                        PantallaAlfanumerica::procesarTecla(tft, label);
+                    }
                 }
             }
             return;

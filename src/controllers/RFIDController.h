@@ -5,6 +5,7 @@
 #include "pantallas/PantallaBase.h"
 #include "pantallas/PantallaNumerica.h"
 #include "pantallas/MenuAdministrador.h"
+#include "pantallas/FontHelper.h"
 
 namespace RFIDController {
     namespace {
@@ -21,11 +22,9 @@ namespace RFIDController {
         void mostrarMensaje(TFT_eSPI& tft, const char* linea1, const char* linea2, uint16_t color) {
             PantallaBase::fondoConBorde(tft);
             tft.setTextColor(color, TFT_BLACK);
-            tft.setTextDatum(MC_DATUM);
-            tft.setTextSize(2);
-            tft.drawString(linea1, tft.width()/2, tft.height()/2 - 20);
+            FontHelper::drawStringWithSpanish(tft, linea1, tft.width()/2, tft.height()/2 - 20, FontHelper::FONT_BOTON);
             if (linea2 && linea2[0] != '\0') {
-                tft.drawString(linea2, tft.width()/2, tft.height()/2 + 20);
+                FontHelper::drawStringWithSpanish(tft, linea2, tft.width()/2, tft.height()/2 + 20, FontHelper::FONT_BOTON);
             }
             delay(1200);
         }
@@ -33,9 +32,7 @@ namespace RFIDController {
         void mostrarPantallaEscaneo(TFT_eSPI& tft) {
             PantallaBase::fondoConBorde(tft);
             tft.setTextColor(TFT_WHITE, TFT_BLACK);
-            tft.setTextDatum(MC_DATUM);
-            tft.setTextSize(2);
-            tft.drawString("Escanee tarjeta", tft.width()/2, tft.height()/2);
+            FontHelper::drawStringWithSpanish(tft, "Escanee tarjeta", tft.width()/2, tft.height()/2, FontHelper::FONT_BOTON);
         }
 
         void mostrarPromptId(TFT_eSPI& tft) {

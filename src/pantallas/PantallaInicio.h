@@ -3,6 +3,7 @@
 #include <TFT_eSPI.h>
 #include "PantallaBase.h"
 #include "PantallaNumerica.h"
+#include "FontHelper.h"
 
 namespace PantallaInicio {
 
@@ -11,9 +12,7 @@ namespace PantallaInicio {
 
     // Texto centrado "Proyecto TFG"
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.setTextDatum(MC_DATUM);
-    tft.setTextSize(3);
-    tft.drawString("Proyecto TFG", tft.width() / 2, tft.height() / 2);
+    FontHelper::drawStringWithSpanish(tft, "Proyecto TFG", tft.width() / 2, tft.height() / 2, FontHelper::FONT_TITULO);
 
     delay(2000);
   }

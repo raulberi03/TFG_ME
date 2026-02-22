@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include "pantallas/PantallaNumerica.h"
 #include "pantallas/MenuAdministrador.h"
+#include "pantallas/FontHelper.h"
 
 namespace LoginController {
     namespace {
@@ -42,7 +43,7 @@ namespace LoginController {
         }
 
         void pedirPassword(TFT_eSPI& tft) {
-            mostrarPromptNumerico(tft, "Password", onPasswordOk, onPasswordClr);
+            mostrarPromptNumerico(tft, "Contraseña", onPasswordOk, onPasswordClr);
         }
 
         void onUsuarioOk(TFT_eSPI& tft, const String& usuario) {
@@ -68,9 +69,7 @@ namespace LoginController {
         void mostrarLoginOk(TFT_eSPI& tft, bool abrirMenuAdmin) {
             tft.fillScreen(TFT_GREEN);
             tft.setTextColor(TFT_BLACK, TFT_GREEN);
-            tft.setTextDatum(MC_DATUM);
-            tft.setTextSize(3);
-            tft.drawString("Login OK", tft.width()/2, tft.height()/2);
+            FontHelper::drawStringWithSpanish(tft, "Login OK", tft.width()/2, tft.height()/2, FontHelper::FONT_TITULO);
             delay(1000);
             PantallaNumerica::pintada() = false;
             if (abrirMenuAdmin) {
@@ -84,9 +83,7 @@ namespace LoginController {
         void mostrarLoginFail(TFT_eSPI& tft) {
             tft.fillScreen(TFT_RED);
             tft.setTextColor(TFT_WHITE, TFT_RED);
-            tft.setTextDatum(MC_DATUM);
-            tft.setTextSize(3);
-            tft.drawString("Login FAIL", tft.width()/2, tft.height()/2);
+            FontHelper::drawStringWithSpanish(tft, "Login FAIL", tft.width()/2, tft.height()/2, FontHelper::FONT_TITULO);
             delay(1200);
             resetMenu();
             pedirUsuario(tft);
