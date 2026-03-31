@@ -45,6 +45,8 @@ namespace AppController {
             }
         }
 
+        WiFiController::tickReconexion();
+
         if (MenuAdministrador::debeVolverAlLogin()) {
             MenuAdministrador::debeVolverAlLogin() = false;
             LoginController::begin(tft);
