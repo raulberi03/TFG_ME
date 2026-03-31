@@ -5,6 +5,7 @@
 #include <XPT2046_Touchscreen.h>
 #include "pantallas/PantallaInicio.h"
 #include "services/RFIDService.h"
+#include "services/FingerprintService.h"
 #include "services/RFIDUsuariosService.h"
 #include "controllers/AppController.h"
 
@@ -15,30 +16,42 @@
 #define PIN_TOUCH_CS  14
 #define PIN_RC522_SS  27
 #define PIN_RC522_RST 26
+#define PIN_R503_TX   17
+#define PIN_R503_RX   16
 
 TFT_eSPI tft = TFT_eSPI();
 XPT2046_Touchscreen ts(PIN_TOUCH_CS);
 RFIDService rfid(PIN_RC522_SS, PIN_RC522_RST);
+FingerprintService fingerprint(Serial2, PIN_R503_RX, PIN_R503_TX);
 RFIDUsuariosService rfidUsuarios;
 
 void setup() {
   // Inicializa perifericos y pantalla principal.
   Serial.begin(115200);
-  delay(300);
+  delay(800);
+  Serial.println();
+  Serial.println("[BOOT] ESP32 iniciado");
+  Serial.println("[BOOT] Inicializando perifericos...");
   pinMode(PIN_TFT_CS, OUTPUT); digitalWrite(PIN_TFT_CS, HIGH);
   pinMode(PIN_TOUCH_CS, OUTPUT); digitalWrite(PIN_TOUCH_CS, HIGH);
   pinMode(PIN_RC522_SS, OUTPUT); digitalWrite(PIN_RC522_SS, HIGH);
   SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI);
+  Serial.println("[BOOT] RFID begin()");
   rfid.begin();
+  Serial.println("[BOOT] Fingerprint begin()");
+  fingerprint.begin();
+  Serial.println("[BOOT] Pantalla TFT init()");
   tft.init(); tft.setRotation(2);
   ts.begin();
   PantallaInicio::mostrar(tft);
   delay(500);
+  Serial.println("[BOOT] AppController begin()");
   // Arranca el flujo de login y gestion.
-  AppController::begin(tft, ts, rfid, rfidUsuarios);
+  AppController::begin(tft, ts, rfid, fingerprint, rfidUsuarios);
+  Serial.println("[BOOT] Setup completado");
 }
 
 void loop() {
   // Delegar la logica de UI y lecturas.
-  AppController::loop(tft, ts, rfid, rfidUsuarios);
+  AppController::loop(tft, ts, rfid, fingerprint, rfidUsuarios);
 }

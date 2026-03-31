@@ -19,6 +19,7 @@ namespace LoginController {
         void onUsuarioClr(TFT_eSPI& tft, String& v);
         void onPasswordOk(TFT_eSPI& tft, const String& pass);
         void onPasswordClr(TFT_eSPI& tft, String& v);
+        void mostrarLoginHuellaOk(TFT_eSPI& tft);
 
         void mostrarPromptNumerico(TFT_eSPI& tft, const char* titulo,
                                    PantallaNumerica::OnOkCallback onOk,
@@ -88,6 +89,15 @@ namespace LoginController {
             resetMenu();
             pedirUsuario(tft);
         }
+
+        void mostrarLoginHuellaOk(TFT_eSPI& tft) {
+            tft.fillScreen(TFT_GREEN);
+            tft.setTextColor(TFT_BLACK, TFT_GREEN);
+            FontHelper::drawStringWithSpanish(tft, "Login ON", tft.width()/2, tft.height()/2, FontHelper::FONT_TITULO);
+            delay(1000);
+            resetMenu();
+            pedirUsuario(tft);
+        }
     }
 
     // Inicia el flujo de login por teclado.
@@ -99,6 +109,14 @@ namespace LoginController {
     inline void handleRfidLogin(TFT_eSPI& tft, bool valido) {
         if (valido) {
             mostrarLoginOk(tft, false);
+        } else {
+            mostrarLoginFail(tft);
+        }
+    }
+
+    inline void handleHuellaLogin(TFT_eSPI& tft, bool valido) {
+        if (valido) {
+            mostrarLoginHuellaOk(tft);
         } else {
             mostrarLoginFail(tft);
         }

@@ -2,11 +2,13 @@
 #include <TFT_eSPI.h>
 #include <XPT2046_Touchscreen.h>
 #include "services/RFIDService.h"
+#include "services/FingerprintService.h"
 #include "services/RFIDUsuariosService.h"
 #include <Arduino.h>
 #include "pantallas/MenuAdministrador.h"
 #include "controllers/LoginController.h"
 #include "controllers/RFIDController.h"
+#include "controllers/FingerprintController.h"
 #include "controllers/TouchController.h"
 #include "controllers/WiFiController.h"
 #include "pantallas/PantallaBase.h"
@@ -15,26 +17,34 @@
 
 namespace AppController {
     // Inicializa los controladores y el flujo de pantallas.
-    inline void begin(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, RFIDUsuariosService& rfidUsuarios) {
+    inline void begin(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, FingerprintService& fingerprint, RFIDUsuariosService& rfidUsuarios) {
         (void)ts;
         (void)rfid;
+        (void)fingerprint;
         (void)rfidUsuarios;
         WiFiController::cargarCredenciales();
         WiFiController::conectarSilencioso();
         RFIDController::begin(rfidUsuarios);
+        FingerprintController::begin();
         LoginController::begin(tft);
     }
 
     // Orquesta UI, RFID y tactil.
-    inline void loop(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, RFIDUsuariosService& rfidUsuarios) {
+    inline void loop(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, FingerprintService& fingerprint, RFIDUsuariosService& rfidUsuarios) {
         (void)rfidUsuarios;
         static uint32_t ultimoWifiCheckMs = 0;
+        fingerprint.tick();
         if (rfid.detectarTarjeta()) {
             Serial.print("RFID UID: ");
             Serial.println(rfid.ultimoUidHex());
             if (!RFIDController::handleCard(tft, rfid.ultimoUidHex()) && !MenuAdministrador::pintada()) {
                 LoginController::handleRfidLogin(tft, rfid.ultimoUidValido());
             }
+        }
+
+        if (fingerprint.detectarHuella() && !MenuAdministrador::pintada()) {
+            Serial.println("[R503] Login por huella");
+            FingerprintController::handleFingerprintLogin(tft, fingerprint.ultimaHuellaValida());
         }
 
         uint32_t ahoraMs = millis();
