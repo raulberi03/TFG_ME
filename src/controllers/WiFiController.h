@@ -2,6 +2,7 @@
 #include <TFT_eSPI.h>
 #include <Arduino.h>
 #include <WiFi.h>
+#include <HTTPClient.h>
 #include <Preferences.h>
 #include "pantallas/PantallaBase.h"
 #include "pantallas/PantallaAlfanumerica.h"
@@ -10,6 +11,8 @@
 
 namespace WiFiController {
     namespace {
+        constexpr char kServidorPingUrl[] = "http://10.140.46.168:5286/api/Conexion/ping";
+        constexpr uint16_t kServidorTimeoutMs = 5000;
         String ssidDeTienda = "";
         String passwordDeTienda = "";
         Preferences prefs;
@@ -103,6 +106,74 @@ namespace WiFiController {
                 tft.setTextColor(TFT_RED, TFT_BLACK);
                 FontHelper::drawStringWithSpanish(tft, "Conexion fallida", tft.width() / 2, tft.height() / 2, FontHelper::FONT_TITULO);
             }
+        }
+
+        void mostrarComprobandoServidor(TFT_eSPI& tft) {
+            PantallaBase::fondoConBorde(tft);
+            tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            FontHelper::drawStringWithSpanish(tft, "Intentando servidor", tft.width() / 2, (tft.height() / 2) - 18, FontHelper::FONT_TITULO);
+            FontHelper::drawStringWithSpanish(tft, "Esperando respuesta...", tft.width() / 2, (tft.height() / 2) + 18, FontHelper::FONT_TEXTO);
+        }
+
+        void mostrarResultadoServidor(TFT_eSPI& tft, bool valorPrueba) {
+            PantallaBase::fondoConBorde(tft);
+            tft.setTextColor(valorPrueba ? TFT_GREEN : TFT_RED, TFT_BLACK);
+            FontHelper::drawStringWithSpanish(tft, valorPrueba ? "Servidor reachable" : "Fallo servidor", tft.width() / 2, (tft.height() / 2) - 28, FontHelper::FONT_TITULO);
+            tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            FontHelper::drawStringWithSpanish(tft, String("Variable prueba: ") + (valorPrueba ? "true" : "false"), tft.width() / 2, (tft.height() / 2) + 14, FontHelper::FONT_TEXTO);
+        }
+
+        bool interpretarRespuestaPing(String respuesta) {
+            respuesta.trim();
+            respuesta.toLowerCase();
+            return respuesta == "true";
+        }
+
+        bool comprobarServidorInterno(TFT_eSPI* tft, bool mostrarPantallas) {
+            bool valorPrueba = false;
+
+            if (mostrarPantallas && tft) {
+                mostrarComprobandoServidor(*tft);
+            }
+
+            if (WiFi.status() == WL_CONNECTED) {
+                HTTPClient http;
+                http.setConnectTimeout(kServidorTimeoutMs);
+                http.setTimeout(kServidorTimeoutMs);
+
+                Serial.print("[Servidor] GET ");
+                Serial.println(kServidorPingUrl);
+
+                if (http.begin(kServidorPingUrl)) {
+                    const int httpCode = http.GET();
+                    Serial.print("[Servidor] HTTP code: ");
+                    Serial.println(httpCode);
+
+                    if (httpCode == 200) {
+                        String respuesta = http.getString();
+                        Serial.print("[Servidor] Respuesta: ");
+                        Serial.println(respuesta);
+                        valorPrueba = interpretarRespuestaPing(respuesta);
+                    } else if (httpCode > 0) {
+                        Serial.println("[Servidor] Respuesta HTTP no valida para considerar exito");
+                    } else {
+                        Serial.print("[Servidor] Error HTTP: ");
+                        Serial.println(http.errorToString(httpCode));
+                    }
+                    http.end();
+                } else {
+                    Serial.println("[Servidor] No se pudo inicializar la peticion HTTP");
+                }
+            } else {
+                Serial.println("[Servidor] Sin conexion WiFi, variable prueba=false");
+            }
+
+            if (mostrarPantallas && tft) {
+                mostrarResultadoServidor(*tft, valorPrueba);
+                delay(1800);
+            }
+
+            return valorPrueba;
         }
 
         bool conectarInterno(TFT_eSPI* tft, bool mostrarPantallas) {
@@ -275,6 +346,14 @@ namespace WiFiController {
 
     inline bool conectarSilencioso() {
         return conectarInterno(nullptr, false);
+    }
+
+    inline bool probarConexionServidorConPantalla(TFT_eSPI& tft) {
+        return comprobarServidorInterno(&tft, true);
+    }
+
+    inline bool probarConexionServidorSilencioso() {
+        return comprobarServidorInterno(nullptr, false);
     }
 
     // Llama esto desde loop(). Reintenta la conexion cada 30s si no esta conectado y hay credenciales.

@@ -11,6 +11,7 @@ namespace AppController {
     const String& obtenerPassword();
     void borrarCredencialesWifi();
     bool conectarWifi(TFT_eSPI& tft);
+    bool probarConexionServidor(TFT_eSPI& tft);
     void gestionarRFIDAgregar(TFT_eSPI& tft);
     void gestionarRFIDSobrescribir(TFT_eSPI& tft);
     void gestionarRFIDDesvincular(TFT_eSPI& tft);
@@ -33,8 +34,8 @@ namespace { const char* const opciones[NUM_OPCIONES] = {
 }; }
 
 // Submenús para cada gestión
-constexpr int NUM_SUBOPCIONES_WIFI = 5;
-namespace { const char* const subopcionesWifi[NUM_SUBOPCIONES_WIFI] = { "Cambiar SSID", "Cambiar Contraseña", "Conectar", "Eliminar red", "Volver" }; }
+constexpr int NUM_SUBOPCIONES_WIFI = 6;
+namespace { const char* const subopcionesWifi[NUM_SUBOPCIONES_WIFI] = { "Cambiar SSID", "Cambiar Contraseña", "Conectar", "Intento conexion\nservidor", "Eliminar red", "Volver" }; }
 
 constexpr int NUM_SUBOPCIONES_RFID = 3;
 namespace { const char* const subopcionesRfid[NUM_SUBOPCIONES_RFID] = { "Agregar", "Sobrescribir", "Desvincular" }; }
@@ -67,7 +68,17 @@ inline void dibujarBoton(TFT_eSPI& tft, int x, int y, int w, int h, const char* 
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
     }
     tft.drawRect(x, y, w, h, TFT_WHITE);
-    FontHelper::drawStringWithSpanish(tft, texto, x + w / 2, y + h / 2, FontHelper::FONT_BOTON);
+
+    String textoBoton = texto;
+    int saltoLinea = textoBoton.indexOf('\n');
+    if (saltoLinea >= 0) {
+        String linea1 = textoBoton.substring(0, saltoLinea);
+        String linea2 = textoBoton.substring(saltoLinea + 1);
+        FontHelper::drawStringWithSpanish(tft, linea1, x + w / 2, y + (h / 2) - 10, FontHelper::FONT_TEXTO);
+        FontHelper::drawStringWithSpanish(tft, linea2, x + w / 2, y + (h / 2) + 10, FontHelper::FONT_TEXTO);
+    } else {
+        FontHelper::drawStringWithSpanish(tft, texto, x + w / 2, y + h / 2, FontHelper::FONT_BOTON);
+    }
 }
 
 inline void dibujarCampoValor(TFT_eSPI& tft, int x, int y, int w, int h, const char* titulo, const String& valor) {
@@ -220,6 +231,9 @@ inline void seleccionarOpcion(TFT_eSPI& tft) {
                 AppController::conectarWifi(tft);
                 mostrar(tft);
             } else if (sel == 3) {
+                AppController::probarConexionServidor(tft);
+                mostrar(tft);
+            } else if (sel == 4) {
                 abrirConfirmacionBorrarWifi(tft);
             } else {
                 menuActivo() = -1;
@@ -320,6 +334,9 @@ inline void procesarToque(TFT_eSPI& tft, int x, int y) {
                 AppController::conectarWifi(tft);
                 mostrar(tft);
             } else if (sel == 3) {
+                AppController::probarConexionServidor(tft);
+                mostrar(tft);
+            } else if (sel == 4) {
                 abrirConfirmacionBorrarWifi(tft);
             } else {
                 menuActivo() = -1;
@@ -363,7 +380,7 @@ inline void actualizar(TFT_eSPI& tft, int boton) {
             mostrar(tft);
         }
     } else if (menuActivo() == 0) {
-        int total = 5;
+        int total = NUM_SUBOPCIONES_WIFI;
         if (boton == 0) {
             int sel = subOpcionSeleccionada();
             if (sel == 0) {
@@ -374,6 +391,9 @@ inline void actualizar(TFT_eSPI& tft, int boton) {
                 AppController::conectarWifi(tft);
                 mostrar(tft);
             } else if (sel == 3) {
+                AppController::probarConexionServidor(tft);
+                mostrar(tft);
+            } else if (sel == 4) {
                 abrirConfirmacionBorrarWifi(tft);
             } else {
                 menuActivo() = -1;

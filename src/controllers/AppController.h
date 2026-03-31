@@ -91,4 +91,8 @@ namespace AppController {
     inline bool conectarWifi(TFT_eSPI& tft) {
         return WiFiController::conectarConPantalla(tft);
     }
+
+    inline bool probarConexionServidor(TFT_eSPI& tft) {
+        return WiFiController::probarConexionServidorConPantalla(tft);
+    }
 }
