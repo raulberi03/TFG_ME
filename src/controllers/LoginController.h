@@ -1,20 +1,22 @@
 #pragma once
 #include <TFT_eSPI.h>
 #include <Arduino.h>
+#include "config/AppConfig.h"
 #include "pantallas/PantallaNumerica.h"
 #include "pantallas/MenuAdministrador.h"
 #include "pantallas/FontHelper.h"
 
 namespace LoginController {
     namespace {
-        const char* kAdminUser = "1234";
-        const char* kAdminPass = "1234";
+        const char* kAdminUser = AppConfig::Login::AdminUser;
+        const char* kAdminPass = AppConfig::Login::AdminPass;
         String ultimoUsuario = "";
 
         void pedirUsuario(TFT_eSPI& tft);
         void pedirPassword(TFT_eSPI& tft);
         void mostrarLoginOk(TFT_eSPI& tft, bool abrirMenuAdmin);
-        void mostrarLoginFail(TFT_eSPI& tft);
+        void mostrarLoginFail(TFT_eSPI& tft, const String& detalle = "");
+        void mostrarAccesoRfid(TFT_eSPI& tft, bool autorizado);
         void onUsuarioOk(TFT_eSPI& tft, const String& usuario);
         void onUsuarioClr(TFT_eSPI& tft, String& v);
         void onPasswordOk(TFT_eSPI& tft, const String& pass);
@@ -81,11 +83,14 @@ namespace LoginController {
             }
         }
 
-        void mostrarLoginFail(TFT_eSPI& tft) {
+        void mostrarLoginFail(TFT_eSPI& tft, const String& detalle) {
             tft.fillScreen(TFT_RED);
             tft.setTextColor(TFT_WHITE, TFT_RED);
-            FontHelper::drawStringWithSpanish(tft, "Login FAIL", tft.width()/2, tft.height()/2, FontHelper::FONT_TITULO);
-            delay(1200);
+            FontHelper::drawStringWithSpanish(tft, "Login FAIL", tft.width()/2, tft.height()/2 - 20, FontHelper::FONT_TITULO);
+            if (detalle.length() > 0) {
+                FontHelper::drawStringWithSpanish(tft, detalle, tft.width()/2, tft.height()/2 + 24, FontHelper::FONT_TEXTO);
+            }
+            delay(1800);
             resetMenu();
             pedirUsuario(tft);
         }
@@ -98,6 +103,21 @@ namespace LoginController {
             resetMenu();
             pedirUsuario(tft);
         }
+
+        void mostrarAccesoRfid(TFT_eSPI& tft, bool autorizado) {
+            tft.fillScreen(autorizado ? TFT_GREEN : TFT_RED);
+            tft.setTextColor(autorizado ? TFT_BLACK : TFT_WHITE, autorizado ? TFT_GREEN : TFT_RED);
+            FontHelper::drawStringWithSpanish(
+                tft,
+                autorizado ? "Acceso autorizado" : "Acceso rechazado",
+                tft.width()/2,
+                tft.height()/2,
+                FontHelper::FONT_TITULO
+            );
+            delay(1200);
+            resetMenu();
+            pedirUsuario(tft);
+        }
     }
 
     // Inicia el flujo de login por teclado.
@@ -106,12 +126,12 @@ namespace LoginController {
     }
 
     // Procesa un login por RFID (solo muestra OK/FAIL, nunca abre menu).
-    inline void handleRfidLogin(TFT_eSPI& tft, bool valido) {
-        if (valido) {
-            mostrarLoginOk(tft, false);
-        } else {
-            mostrarLoginFail(tft);
+    inline void handleRfidLogin(TFT_eSPI& tft, bool valido, const String& detalle = "") {
+        if (!valido && detalle.length() > 0) {
+            Serial.print("[RFID] Login rechazado: ");
+            Serial.println(detalle);
         }
+        mostrarAccesoRfid(tft, valido);
     }
 
     inline void handleHuellaLogin(TFT_eSPI& tft, bool valido) {

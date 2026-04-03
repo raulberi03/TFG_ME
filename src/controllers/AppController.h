@@ -3,7 +3,6 @@
 #include <XPT2046_Touchscreen.h>
 #include "services/RFIDService.h"
 #include "services/FingerprintService.h"
-#include "services/RFIDUsuariosService.h"
 #include <Arduino.h>
 #include "pantallas/MenuAdministrador.h"
 #include "controllers/LoginController.h"
@@ -17,28 +16,26 @@
 
 namespace AppController {
     // Inicializa los controladores y el flujo de pantallas.
-    inline void begin(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, FingerprintService& fingerprint, RFIDUsuariosService& rfidUsuarios) {
+    inline void begin(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, FingerprintService& fingerprint) {
         (void)ts;
-        (void)rfid;
         (void)fingerprint;
-        (void)rfidUsuarios;
         WiFiController::cargarCredenciales();
         WiFiController::conectarSilencioso();
-        RFIDController::begin(rfidUsuarios);
+        RFIDController::begin(rfid);
         FingerprintController::begin();
         LoginController::begin(tft);
     }
 
     // Orquesta UI, RFID y tactil.
-    inline void loop(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, FingerprintService& fingerprint, RFIDUsuariosService& rfidUsuarios) {
-        (void)rfidUsuarios;
+    inline void loop(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, FingerprintService& fingerprint) {
         static uint32_t ultimoWifiCheckMs = 0;
         fingerprint.tick();
         if (rfid.detectarTarjeta()) {
             Serial.print("RFID UID: ");
             Serial.println(rfid.ultimoUidHex());
             if (!RFIDController::handleCard(tft, rfid.ultimoUidHex()) && !MenuAdministrador::pintada()) {
-                LoginController::handleRfidLogin(tft, rfid.ultimoUidValido());
+                RFIDController::mostrarComprobandoTarjeta(tft);
+                LoginController::handleRfidLogin(tft, rfid.loginTarjeta(rfid.ultimoUidHex()), rfid.ultimoMensaje());
             }
         }
 

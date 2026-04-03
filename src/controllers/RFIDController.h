@@ -1,6 +1,6 @@
 #pragma once
 #include <TFT_eSPI.h>
-#include "services/RFIDUsuariosService.h"
+#include "services/RFIDService.h"
 #include <Arduino.h>
 #include "pantallas/PantallaBase.h"
 #include "pantallas/PantallaNumerica.h"
@@ -9,7 +9,7 @@
 
 namespace RFIDController {
     namespace {
-        RFIDUsuariosService* g_rfidUsuarios = nullptr;
+        RFIDService* g_rfid = nullptr;
 
         enum class RfidOp { None, Agregar, Sobrescribir, Desvincular };
         RfidOp rfidOpPendiente = RfidOp::None;
@@ -19,20 +19,27 @@ namespace RFIDController {
         void onUsuarioOk(TFT_eSPI& tft, const String& usuarioId);
         void onUsuarioClr(TFT_eSPI& tft, String& v);
 
-        void mostrarMensaje(TFT_eSPI& tft, const char* linea1, const char* linea2, uint16_t color) {
+        void mostrarMensaje(TFT_eSPI& tft, const char* linea1, const String& linea2, uint16_t color) {
             PantallaBase::fondoConBorde(tft);
             tft.setTextColor(color, TFT_BLACK);
             FontHelper::drawStringWithSpanish(tft, linea1, tft.width()/2, tft.height()/2 - 20, FontHelper::FONT_BOTON);
-            if (linea2 && linea2[0] != '\0') {
+            if (linea2.length() > 0) {
                 FontHelper::drawStringWithSpanish(tft, linea2, tft.width()/2, tft.height()/2 + 20, FontHelper::FONT_BOTON);
             }
-            delay(1200);
+            delay(1800);
         }
 
         void mostrarPantallaEscaneo(TFT_eSPI& tft) {
             PantallaBase::fondoConBorde(tft);
             tft.setTextColor(TFT_WHITE, TFT_BLACK);
             FontHelper::drawStringWithSpanish(tft, "Escanee tarjeta", tft.width()/2, tft.height()/2, FontHelper::FONT_BOTON);
+        }
+
+        void mostrarComprobando(TFT_eSPI& tft) {
+            PantallaBase::fondoConBorde(tft);
+            tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            FontHelper::drawStringWithSpanish(tft, "Comprobando", tft.width()/2, tft.height()/2 - 20, FontHelper::FONT_BOTON);
+            FontHelper::drawStringWithSpanish(tft, "espere...", tft.width()/2, tft.height()/2 + 20, FontHelper::FONT_BOTON);
         }
 
         void mostrarPromptId(TFT_eSPI& tft) {
@@ -50,29 +57,18 @@ namespace RFIDController {
             PantallaNumerica::pintada() = false;
 
             if (rfidOpPendiente == RfidOp::Desvincular) {
-                bool ok = g_rfidUsuarios && g_rfidUsuarios->desvincular(rfidUsuarioPendiente);
-                mostrarMensaje(tft, ok ? "RFID desvinculado" : "No encontrado", "", ok ? TFT_GREEN : TFT_RED);
+                mostrarComprobando(tft);
+                bool ok = g_rfid && g_rfid->eliminarTarjeta(rfidUsuarioPendiente);
+                String detalle = "";
+                if (!ok && g_rfid) {
+                    detalle = g_rfid->ultimoMensaje();
+                }
+
+                mostrarMensaje(tft, ok ? "RFID eliminado" : "Error servidor RFID", detalle, ok ? TFT_GREEN : TFT_RED);
                 MenuAdministrador::mostrar(tft);
                 rfidOpPendiente = RfidOp::None;
+                rfidEsperandoTarjeta = false;
                 return;
-            }
-
-            if (rfidOpPendiente == RfidOp::Agregar) {
-                if (g_rfidUsuarios && g_rfidUsuarios->tieneUsuario(rfidUsuarioPendiente)) {
-                    mostrarMensaje(tft, "Usuario ya tiene", "RFID", TFT_RED);
-                    MenuAdministrador::mostrar(tft);
-                    rfidOpPendiente = RfidOp::None;
-                    return;
-                }
-            }
-
-            if (rfidOpPendiente == RfidOp::Sobrescribir) {
-                if (!g_rfidUsuarios || !g_rfidUsuarios->tieneUsuario(rfidUsuarioPendiente)) {
-                    mostrarMensaje(tft, "Usuario sin", "RFID", TFT_RED);
-                    MenuAdministrador::mostrar(tft);
-                    rfidOpPendiente = RfidOp::None;
-                    return;
-                }
             }
 
             mostrarPantallaEscaneo(tft);
@@ -85,9 +81,9 @@ namespace RFIDController {
         }
     }
 
-    // Inyecta el servicio de usuarios RFID.
-    inline void begin(RFIDUsuariosService& rfidUsuarios) {
-        g_rfidUsuarios = &rfidUsuarios;
+    // Inyecta el servicio RFID que habla con la API.
+    inline void begin(RFIDService& rfid) {
+        g_rfid = &rfid;
     }
 
     // Inicia los flujos desde el menu de administrador.
@@ -113,17 +109,37 @@ namespace RFIDController {
             return false;
         }
 
+        mostrarComprobando(tft);
+
         bool ok = false;
         if (rfidOpPendiente == RfidOp::Agregar) {
-            ok = g_rfidUsuarios && g_rfidUsuarios->agregarSiNoTiene(rfidUsuarioPendiente, uid);
+            ok = g_rfid && g_rfid->agregarTarjeta(uid, rfidUsuarioPendiente);
         } else if (rfidOpPendiente == RfidOp::Sobrescribir) {
-            ok = g_rfidUsuarios && g_rfidUsuarios->sobrescribir(rfidUsuarioPendiente, uid);
+            ok = g_rfid && g_rfid->sobrescribirTarjeta(uid, rfidUsuarioPendiente);
         }
 
-        mostrarMensaje(tft, ok ? "RFID vinculado" : "Error al vincular", "", ok ? TFT_GREEN : TFT_RED);
+        const char* mensajeOk = "Operacion RFID OK";
+        if (rfidOpPendiente == RfidOp::Agregar) {
+            mensajeOk = "RFID agregado";
+        } else if (rfidOpPendiente == RfidOp::Sobrescribir) {
+            mensajeOk = "RFID actualizado";
+        } else if (rfidOpPendiente == RfidOp::Desvincular) {
+            mensajeOk = "RFID eliminado";
+        }
+
+        String detalle = "";
+        if (!ok && g_rfid) {
+            detalle = g_rfid->ultimoMensaje();
+        }
+
+        mostrarMensaje(tft, ok ? mensajeOk : "Error servidor RFID", detalle, ok ? TFT_GREEN : TFT_RED);
         MenuAdministrador::mostrar(tft);
         rfidOpPendiente = RfidOp::None;
         rfidEsperandoTarjeta = false;
         return true;
+    }
+
+    inline void mostrarComprobandoTarjeta(TFT_eSPI& tft) {
+        mostrarComprobando(tft);
     }
 }

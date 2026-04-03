@@ -4,6 +4,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
+#include "config/AppConfig.h"
 #include "pantallas/PantallaBase.h"
 #include "pantallas/PantallaAlfanumerica.h"
 #include "pantallas/MenuAdministrador.h"
@@ -11,8 +12,8 @@
 
 namespace WiFiController {
     namespace {
-        constexpr char kServidorPingUrl[] = "http://10.140.46.168:5286/api/Conexion/ping";
-        constexpr uint16_t kServidorTimeoutMs = 5000;
+        constexpr const char* kServidorPingUrl = AppConfig::WiFi::ServidorPingUrl;
+        constexpr uint16_t kServidorTimeoutMs = AppConfig::WiFi::ServidorTimeoutMs;
         String ssidDeTienda = "";
         String passwordDeTienda = "";
         Preferences prefs;

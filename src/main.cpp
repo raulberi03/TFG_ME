@@ -4,26 +4,15 @@
 #include <TFT_eSPI.h>
 #include <XPT2046_Touchscreen.h>
 #include "pantallas/PantallaInicio.h"
+#include "config/AppConfig.h"
 #include "services/RFIDService.h"
 #include "services/FingerprintService.h"
-#include "services/RFIDUsuariosService.h"
 #include "controllers/AppController.h"
 
-#define PIN_SPI_SCK   18
-#define PIN_SPI_MISO  19
-#define PIN_SPI_MOSI  23
-#define PIN_TFT_CS    5
-#define PIN_TOUCH_CS  14
-#define PIN_RC522_SS  27
-#define PIN_RC522_RST 26
-#define PIN_R503_TX   17
-#define PIN_R503_RX   16
-
 TFT_eSPI tft = TFT_eSPI();
-XPT2046_Touchscreen ts(PIN_TOUCH_CS);
-RFIDService rfid(PIN_RC522_SS, PIN_RC522_RST);
-FingerprintService fingerprint(Serial2, PIN_R503_RX, PIN_R503_TX);
-RFIDUsuariosService rfidUsuarios;
+XPT2046_Touchscreen ts(AppConfig::Pins::TOUCH_CS_PIN);
+RFIDService rfid(AppConfig::Pins::RC522_SS, AppConfig::Pins::RC522_RST);
+FingerprintService fingerprint(Serial2, AppConfig::Pins::R503_RX, AppConfig::Pins::R503_TX);
 
 void setup() {
   // Inicializa perifericos y pantalla principal.
@@ -32,10 +21,10 @@ void setup() {
   Serial.println();
   Serial.println("[BOOT] ESP32 iniciado");
   Serial.println("[BOOT] Inicializando perifericos...");
-  pinMode(PIN_TFT_CS, OUTPUT); digitalWrite(PIN_TFT_CS, HIGH);
-  pinMode(PIN_TOUCH_CS, OUTPUT); digitalWrite(PIN_TOUCH_CS, HIGH);
-  pinMode(PIN_RC522_SS, OUTPUT); digitalWrite(PIN_RC522_SS, HIGH);
-  SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI);
+  pinMode(AppConfig::Pins::TFT_CS_PIN, OUTPUT); digitalWrite(AppConfig::Pins::TFT_CS_PIN, HIGH);
+  pinMode(AppConfig::Pins::TOUCH_CS_PIN, OUTPUT); digitalWrite(AppConfig::Pins::TOUCH_CS_PIN, HIGH);
+  pinMode(AppConfig::Pins::RC522_SS, OUTPUT); digitalWrite(AppConfig::Pins::RC522_SS, HIGH);
+  SPI.begin(AppConfig::Pins::SPI_SCK, AppConfig::Pins::SPI_MISO, AppConfig::Pins::SPI_MOSI);
   Serial.println("[BOOT] RFID begin()");
   rfid.begin();
   Serial.println("[BOOT] Fingerprint begin()");
@@ -47,11 +36,11 @@ void setup() {
   delay(500);
   Serial.println("[BOOT] AppController begin()");
   // Arranca el flujo de login y gestion.
-  AppController::begin(tft, ts, rfid, fingerprint, rfidUsuarios);
+  AppController::begin(tft, ts, rfid, fingerprint);
   Serial.println("[BOOT] Setup completado");
 }
 
 void loop() {
   // Delegar la logica de UI y lecturas.
-  AppController::loop(tft, ts, rfid, fingerprint, rfidUsuarios);
+  AppController::loop(tft, ts, rfid, fingerprint);
 }
