@@ -59,12 +59,12 @@ namespace RFIDController {
             if (rfidOpPendiente == RfidOp::Desvincular) {
                 mostrarComprobando(tft);
                 bool ok = g_rfid && g_rfid->eliminarTarjeta(rfidUsuarioPendiente);
-                String detalle = "";
-                if (!ok && g_rfid) {
-                    detalle = g_rfid->ultimoMensaje();
+                if (!ok && g_rfid && g_rfid->ultimoMensaje().length() > 0) {
+                    Serial.print("[RFID] Error eliminar: ");
+                    Serial.println(g_rfid->ultimoMensaje());
                 }
 
-                mostrarMensaje(tft, ok ? "RFID eliminado" : "Error servidor RFID", detalle, ok ? TFT_GREEN : TFT_RED);
+                mostrarMensaje(tft, ok ? "RFID eliminado" : "Error servidor RFID", "", ok ? TFT_GREEN : TFT_RED);
                 MenuAdministrador::mostrar(tft);
                 rfidOpPendiente = RfidOp::None;
                 rfidEsperandoTarjeta = false;
@@ -127,12 +127,15 @@ namespace RFIDController {
             mensajeOk = "RFID eliminado";
         }
 
-        String detalle = "";
-        if (!ok && g_rfid) {
-            detalle = g_rfid->ultimoMensaje();
+        if (!ok && g_rfid && g_rfid->ultimoMensaje().length() > 0) {
+            const char* operacion = rfidOpPendiente == RfidOp::Agregar ? "agregar" : "sobrescribir";
+            Serial.print("[RFID] Error ");
+            Serial.print(operacion);
+            Serial.print(": ");
+            Serial.println(g_rfid->ultimoMensaje());
         }
 
-        mostrarMensaje(tft, ok ? mensajeOk : "Error servidor RFID", detalle, ok ? TFT_GREEN : TFT_RED);
+        mostrarMensaje(tft, ok ? mensajeOk : "Error servidor RFID", "", ok ? TFT_GREEN : TFT_RED);
         MenuAdministrador::mostrar(tft);
         rfidOpPendiente = RfidOp::None;
         rfidEsperandoTarjeta = false;

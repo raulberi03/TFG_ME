@@ -15,6 +15,10 @@ namespace AppController {
     void gestionarRFIDAgregar(TFT_eSPI& tft);
     void gestionarRFIDSobrescribir(TFT_eSPI& tft);
     void gestionarRFIDDesvincular(TFT_eSPI& tft);
+    void gestionarHuellaAgregar(TFT_eSPI& tft);
+    void gestionarHuellaSobrescribir(TFT_eSPI& tft);
+    void gestionarHuellaDesvincular(TFT_eSPI& tft);
+    void gestionarHuellaLimpiarTodo(TFT_eSPI& tft);
 }
 
 namespace MenuAdministrador {
@@ -40,8 +44,11 @@ namespace { const char* const subopcionesWifi[NUM_SUBOPCIONES_WIFI] = { "Cambiar
 constexpr int NUM_SUBOPCIONES_RFID = 3;
 namespace { const char* const subopcionesRfid[NUM_SUBOPCIONES_RFID] = { "Agregar", "Sobrescribir", "Desvincular" }; }
 
+constexpr int NUM_SUBOPCIONES_HUELLA = 4;
+namespace { const char* const subopcionesHuella[NUM_SUBOPCIONES_HUELLA] = { "Agregar", "Sobrescribir", "Desvincular", "Borrar todas" }; }
+
 constexpr int NUM_SUBOPCIONES_GENERICAS = 1;
-namespace { const char* const subopcionesGenericas[NUM_SUBOPCIONES_GENERICAS] = { "Opcion 1" }; }
+namespace { const char* const subopcionesGenericas[NUM_SUBOPCIONES_GENERICAS] = { "Volver" }; }
 
 inline int& subOpcionSeleccionada() { static int s = 0; return s; }
 inline int& menuActivo() { static int m = -1; return m; } // -1: menú principal, 0-2: submenú
@@ -51,12 +58,14 @@ constexpr int MENU_CONFIRMAR_BORRADO_WIFI = 100;
 inline int subopcionesCount() {
     if (menuActivo() == 0) return NUM_SUBOPCIONES_WIFI;
     if (menuActivo() == 1) return NUM_SUBOPCIONES_RFID;
+    if (menuActivo() == 2) return NUM_SUBOPCIONES_HUELLA;
     return NUM_SUBOPCIONES_GENERICAS;
 }
 
 inline const char* subopcionTexto(int idx) {
     if (menuActivo() == 0) return subopcionesWifi[idx];
     if (menuActivo() == 1) return subopcionesRfid[idx];
+    if (menuActivo() == 2) return subopcionesHuella[idx];
     return subopcionesGenericas[idx];
 }
 
@@ -250,6 +259,19 @@ inline void seleccionarOpcion(TFT_eSPI& tft) {
                 menuActivo() = -1;
                 mostrar(tft);
             }
+        } else if (menuActivo() == 2) { // Gestion Huella
+            if (sel == 0) {
+                AppController::gestionarHuellaAgregar(tft);
+            } else if (sel == 1) {
+                AppController::gestionarHuellaSobrescribir(tft);
+            } else if (sel == 2) {
+                AppController::gestionarHuellaDesvincular(tft);
+            } else if (sel == 3) {
+                AppController::gestionarHuellaLimpiarTodo(tft);
+            } else {
+                menuActivo() = -1;
+                mostrar(tft);
+            }
         } else {
             // Volver
             menuActivo() = -1;
@@ -354,6 +376,19 @@ inline void procesarToque(TFT_eSPI& tft, int x, int y) {
                     AppController::gestionarRFIDSobrescribir(tft);
                 } else if (sel == 2) {
                     AppController::gestionarRFIDDesvincular(tft);
+                } else {
+                    menuActivo() = -1;
+                    mostrar(tft);
+                }
+            } else if (menuActivo() == 2) {
+                if (sel == 0) {
+                    AppController::gestionarHuellaAgregar(tft);
+                } else if (sel == 1) {
+                    AppController::gestionarHuellaSobrescribir(tft);
+                } else if (sel == 2) {
+                    AppController::gestionarHuellaDesvincular(tft);
+                } else if (sel == 3) {
+                    AppController::gestionarHuellaLimpiarTodo(tft);
                 } else {
                     menuActivo() = -1;
                     mostrar(tft);

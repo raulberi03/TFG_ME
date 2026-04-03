@@ -141,4 +141,10 @@ namespace LoginController {
             mostrarLoginFail(tft);
         }
     }
+
+    inline bool permiteLoginHuella() {
+        return PantallaNumerica::pintada()
+            && MenuAdministrador::menuActivo() == -1
+            && strcmp(PantallaNumerica::config().textoSuperior, "Codigo Usuario") == 0;
+    }
 }

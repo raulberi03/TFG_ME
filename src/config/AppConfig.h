@@ -26,6 +26,10 @@ namespace AppConfig {
         constexpr char ServidorRfidAgregarUrl[] = "http://192.168.1.131:5286/api/RFID/agregar-tarjeta";
         constexpr char ServidorRfidSobrescribirUrl[] = "http://192.168.1.131:5286/api/RFID/sobrescribir-tarjeta";
         constexpr char ServidorRfidEliminarUrl[] = "http://192.168.1.131:5286/api/RFID/eliminar-tarjeta";
+        constexpr char ServidorHuellaLoginUrl[] = "http://192.168.1.131:5286/api/Huella/login-huella";
+        constexpr char ServidorHuellaAgregarUrl[] = "http://192.168.1.131:5286/api/Huella/agregar-huella";
+        constexpr char ServidorHuellaSobrescribirUrl[] = "http://192.168.1.131:5286/api/Huella/sobrescribir-huella";
+        constexpr char ServidorHuellaEliminarUrl[] = "http://192.168.1.131:5286/api/Huella/eliminar-huella";
         constexpr uint16_t ServidorTimeoutMs = 15000;
     }
 }

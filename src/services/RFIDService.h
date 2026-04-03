@@ -19,14 +19,20 @@ struct RFIDService {
     }
 
     bool detectarTarjeta() {
+        digitalWrite(AppConfig::Pins::TFT_CS_PIN, HIGH);
+        digitalWrite(AppConfig::Pins::TOUCH_CS_PIN, HIGH);
+
         if (!reader.PICC_IsNewCardPresent()) {
             return false;
         }
         if (!reader.PICC_ReadCardSerial()) {
+            Serial.println("[RFID] Tarjeta detectada pero no se pudo leer el UID");
             return false;
         }
 
         ultimoUid = uidToHex(reader.uid);
+        Serial.print("[RFID] UID leido: ");
+        Serial.println(ultimoUid);
         reader.PICC_HaltA();
         reader.PCD_StopCrypto1();
         return true;

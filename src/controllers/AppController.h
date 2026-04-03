@@ -18,11 +18,10 @@ namespace AppController {
     // Inicializa los controladores y el flujo de pantallas.
     inline void begin(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, FingerprintService& fingerprint) {
         (void)ts;
-        (void)fingerprint;
         WiFiController::cargarCredenciales();
         WiFiController::conectarSilencioso();
         RFIDController::begin(rfid);
-        FingerprintController::begin();
+        FingerprintController::begin(fingerprint);
         LoginController::begin(tft);
     }
 
@@ -30,6 +29,14 @@ namespace AppController {
     inline void loop(TFT_eSPI& tft, XPT2046_Touchscreen& ts, RFIDService& rfid, FingerprintService& fingerprint) {
         static uint32_t ultimoWifiCheckMs = 0;
         fingerprint.tick();
+        if (FingerprintController::hayOperacionPendiente()) {
+            fingerprint.activarModoOperacion();
+        } else if (LoginController::permiteLoginHuella()) {
+            fingerprint.activarModoLogin();
+        } else {
+            fingerprint.apagarLed();
+        }
+
         if (rfid.detectarTarjeta()) {
             Serial.print("RFID UID: ");
             Serial.println(rfid.ultimoUidHex());
@@ -39,9 +46,23 @@ namespace AppController {
             }
         }
 
-        if (fingerprint.detectarHuella() && !MenuAdministrador::pintada()) {
-            Serial.println("[R503] Login por huella");
-            FingerprintController::handleFingerprintLogin(tft, fingerprint.ultimaHuellaValida());
+        if (fingerprint.detectarHuella()) {
+            if (!FingerprintController::handleCapturedFingerprint(tft) && LoginController::permiteLoginHuella()) {
+                Serial.println("[R503] Login por huella");
+                fingerprint.activarModoLogin();
+                FingerprintController::mostrarComprobandoHuella(tft);
+                bool valido = fingerprint.loginHuella();
+                if (!valido && fingerprint.ultimoMensaje().length() > 0) {
+                    Serial.print("[R503] Login rechazado: ");
+                    Serial.println(fingerprint.ultimoMensaje());
+                    fingerprint.indicarError();
+                } else if (valido) {
+                    Serial.print("[R503] Login local OK en slot ");
+                    Serial.println((int)fingerprint.ultimoSlot());
+                    fingerprint.indicarExito();
+                }
+                FingerprintController::handleFingerprintLogin(tft, valido);
+            }
         }
 
         uint32_t ahoraMs = millis();
@@ -81,6 +102,22 @@ namespace AppController {
 
     inline void gestionarRFIDDesvincular(TFT_eSPI& tft) {
         RFIDController::startUnlink(tft);
+    }
+
+    inline void gestionarHuellaAgregar(TFT_eSPI& tft) {
+        FingerprintController::startAdd(tft);
+    }
+
+    inline void gestionarHuellaSobrescribir(TFT_eSPI& tft) {
+        FingerprintController::startOverwrite(tft);
+    }
+
+    inline void gestionarHuellaDesvincular(TFT_eSPI& tft) {
+        FingerprintController::startUnlink(tft);
+    }
+
+    inline void gestionarHuellaLimpiarTodo(TFT_eSPI& tft) {
+        FingerprintController::startClearAll(tft);
     }
 
     inline const String& obtenerSSID() {
